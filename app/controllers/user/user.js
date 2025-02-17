@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const {userRegistrationSchema,userLoginSchema, userRegistrationFormSchema} = require("../vailidators/usersValidaters");
 const { errorResponse, successResponse } = require("../../utils/helper");
 const { Users } = require("../../models");
+const UserForm = require("../../models/userForm");
 const { jwtAuthentication } = require("../../middlewares");
 
 exports.registerUser = async (req, res) => {
@@ -92,7 +93,7 @@ exports.loginUser = async (req, res) => {
       return successResponse(
         res,
         `Admin Login successfully!`,
-        { encryptedToken },
+        { encryptedToken , user_role: "admin"},
         200
       );
     }
@@ -100,7 +101,7 @@ exports.loginUser = async (req, res) => {
     return successResponse(
       res,
       `User Login successfully!`,
-      { encryptedToken },
+      { encryptedToken , user_role: "user"},
       200
     );
   } catch (error) {
@@ -175,49 +176,51 @@ exports.updateUser = async (req, res) => {
 };
 
 exports.registerForm = async (req, res) => {
-    const { error } = userRegistrationFormSchema.validate(req.body);
-    if (error) {
-      return errorResponse(res, error.details[0].message, 400);
-    }
-  
-    const { first_name, last_name, email, mobile, address, gender, date_of_birth, city, state, category, designation, message, photo } = req.body;
-  
-    try {
-      const existingUser = await Users.findOne({ email });
-  
-      if (existingUser) {
-        return errorResponse(res, "Email is already registered.", 400);
-      }
-  
-      const data = {
-        first_name,
-        last_name,
-        email,
-        mobile,
-        address,
-        gender,
-        date_of_birth,
-        city,
-        state,
-        category,
-        designation,
-        message,
-        photo,
-        user_role: "user",
-      };
-  
-      const newUser = new Users(data);
-      await newUser.save();
-  
-      successResponse(
-        res,
-        "User registered successfully with full details!",
-        { first_name, last_name, email, mobile, address, gender, date_of_birth, city, state, category, designation, message, photo },
-        201
-      );
-    } catch (error) {
-      console.error(error);
-      errorResponse(res, error.message, 500);
-    }
-  };
+  const { error } = userRegistrationFormSchema.validate(req.body);
+  if (error) {
+    return errorResponse(res, error.details[0].message, 400);
+  }
 
+  const { first_name, last_name, email, mobile, address, gender, date_of_birth, city, state, category, designation, message } = req.body;
+
+  const photoUrl = req.file ? req.file.path : null;
+
+  if (!photoUrl) {
+    return errorResponse(res, "Photo is required.", 400);
+  }
+
+  try {
+    const existingUser = await Users.findOne({ email });
+
+    if (!existingUser) {
+      return errorResponse(res, "User not found. Please register first.", 400);
+    }
+
+    const data = {
+      user_id: existingUser._id,  
+      address,
+      gender,
+      date_of_birth,
+      city,
+      state,
+      category,
+      designation,
+      message,
+      photo: photoUrl,  
+      user_role: "user",
+    };
+
+    const newUserForm = new UserForm(data);
+    await newUserForm.save();
+
+    successResponse(
+      res,
+      "User Registration Form Successfully Submitted with full information!",
+      { first_name, last_name, email, mobile, address, gender, date_of_birth, city, state, category, designation, message, photo: photoUrl },
+      201
+    );
+  } catch (error) {
+    console.error(error);
+    errorResponse(res, error.message, 500);
+  }
+};
