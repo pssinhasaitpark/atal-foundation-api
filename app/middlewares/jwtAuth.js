@@ -130,6 +130,36 @@ const verifyRole = (req, res) => {
   );
 };
 
+// const verifyAdmin = (req, res, next) => {
+//   if (req.user.user_role !== 'admin') {
+//     return handleResponse(res, 403, "Admin access required");
+//   }
+//   next();
+// };
+
+// Middleware to check if the user is an Admin or Super-Admin
+const verifyAdmin = (req, res, next) => {
+  const { user_role } = req.user; // Access the user role from the decoded token
+
+  if (user_role === "admin" || user_role === "super-admin") {
+    return next(); // Allow access to the next handler if user is admin or super-admin
+  }
+
+  return handleResponse(res, 403, "Access denied: Admins only");
+};
+
+// Middleware to check if the user is Super-Admin
+const verifySuperAdmin = (req, res, next) => {
+  const { user_role } = req.user;
+
+  if (user_role === "super-admin") {
+    return next(); // Allow access to the next handler if the user is a super-admin
+  }
+
+  return handleResponse(res, 403, "Access denied: Super-Admins only");
+};
+
+
 module.exports = {
   signAccessToken,
   signResetToken,
@@ -137,4 +167,6 @@ module.exports = {
   decryptToken,
   encryptToken,
   verifyRole,
+  verifyAdmin, 
+  verifySuperAdmin,
 };

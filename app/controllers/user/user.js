@@ -83,12 +83,12 @@ exports.loginUser = async (req, res) => {
     if (user.user_role === "super-admin") {
       return successResponse(
         res,
-        `Super Admin Login successfully!`,
+        `Super Admin Login Successfully!`,
         { encryptedToken },
         200
       );
     } else if (user.user_role === "admin") {
-      console.log("admin login succfull");
+      console.log("Admin Login Succesfully");
 
       return successResponse(
         res,
