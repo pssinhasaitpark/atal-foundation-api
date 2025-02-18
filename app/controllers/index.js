@@ -1,3 +1,5 @@
 module.exports = {
-    users: require('./user/user')
+    users: require('./user/user'),
+    vision:require("./vision/vision"),
+    home: require("./home/home")
 }

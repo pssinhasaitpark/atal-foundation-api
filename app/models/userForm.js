@@ -31,9 +31,7 @@ const userFormSchema = new mongoose.Schema({
   message: {
     type: String,
   },
-  photo: {
-    type: String,
-  },
+  images: [String]
 }, {
   timestamps: true,
 });
