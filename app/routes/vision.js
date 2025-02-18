@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { createVision, getAllVision, getVisionById, updateVision, deleteVision } = require('../controllers/vision/visionController');
 const visionValidator = require('../validators/visionValidators');
-const multer = require('../dbConfig/multer');
+const multer = require('../middlewares/multer');
 const { verifyUser, verifyAdmin } = require('../middlewares/jwtAuth');
 
 router.post('/create', verifyUser, verifyAdmin, multer.single('image'), visionValidator, createVision);

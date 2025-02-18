@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { users } = require("../controllers");
 const { verifyUser } = require("../middlewares/jwtAuth");
-const upload = require('../dbConfig/multer');
+const upload = require('../middlewares/multer');
 
 const { registerForm } = require("../controllers/user/user");
 

@@ -1,6 +1,6 @@
 const Vision = require("../../models/vision");
-const cloudinary = require("../../dbConfig/cloudinary");
-const multer = require("../../dbConfig/multer");
+const cloudinary = require("../../middlewares/cloudinary");
+const multer = require("../../middlewares/multer");
 const { validationResult } = require("express-validator");
 
 const createVision = async (req, res) => {
