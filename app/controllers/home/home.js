@@ -65,7 +65,7 @@ const updateHomeSection = async (req, res) => {
     const { id } = req.params;
     const { text, link } = req.body;
   
-    if (req.files && req.files.length === 0) {
+    if (!req.files || req.files.length === 0) {
       return res.status(400).json({ errors: [{ msg: 'At least one image is required', param: 'images' }] });
     }
   
@@ -86,7 +86,7 @@ const updateHomeSection = async (req, res) => {
   
       homeSection.text = text || homeSection.text;
       homeSection.link = link || homeSection.link;
-  
+      
       await homeSection.save();
   
       res.status(200).json({ message: "Home section updated successfully", homeSection });

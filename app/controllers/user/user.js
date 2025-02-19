@@ -191,7 +191,6 @@ exports.registerForm = async (req, res) => {
     );
     imageUrls = await Promise.all(uploadPromises);
   }
-console.log("imagers=======================",imageUrls);
 
   try {
     const existingUser = await Users.findOne({ email });

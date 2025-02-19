@@ -2,7 +2,7 @@ const Mission = require("../../models/mission");
 const cloudinary = require("../../middlewares/cloudinary");
 const missionValidator = require("../../validators/missionValidators");
 const { handleResponse } = require("../../utils/helper")
-// Create a new Mission
+
 const createMission = async (req, res) => {
   const { error } = missionValidator.validate(req.body);
   if (error) {
@@ -33,7 +33,6 @@ const createMission = async (req, res) => {
   }
 };
 
-// Get all Missions
 const getAllMissions = async (req, res) => {
   try {
     const missions = await Mission.find().sort({ createdAt: -1 });
@@ -43,7 +42,6 @@ const getAllMissions = async (req, res) => {
   }
 };
 
-// Get Mission by ID
 const getMissionById = async (req, res) => {
   try {
     const mission = await Mission.findById(req.params.id);
@@ -56,7 +54,6 @@ const getMissionById = async (req, res) => {
   }
 };
 
-// Update Mission (Admin Only)
 const updateMission = async (req, res) => {
   const { error } = missionValidator.validate(req.body);
   if (error) {
@@ -69,12 +66,17 @@ const updateMission = async (req, res) => {
         return handleResponse(res, 404, "Mission not found");
     }
 
-    if (req.file) {
-      mission.image = await cloudinary.uploadImageToCloudinary(req.file.buffer);
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map((file) =>
+        cloudinary.uploadImageToCloudinary(file.buffer)
+      );
+      imageUrls = await Promise.all(uploadPromises);
     }
 
     mission.heading = req.body.heading || mission.heading;
     mission.text = req.body.text || mission.text;
+    mission.images=imageUrls;
 
     await mission.save();
     return handleResponse(res, 200, "Mission updated successfully", { mission });
@@ -83,7 +85,6 @@ const updateMission = async (req, res) => {
   }
 };
 
-// Delete Mission (Admin Only)
 const deleteMission = async (req, res) => {
   try {
     const mission = await Mission.findByIdAndDelete(req.params.id);
