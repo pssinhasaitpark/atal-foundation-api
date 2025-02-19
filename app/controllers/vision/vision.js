@@ -74,14 +74,18 @@ const updateVision = async (req, res) => {
       return res.status(404).json({ message: "Vision not found" });
     }
 
-    if (req.file) {
-      const file = req.file;
-      const result = await cloudinary.uploader.upload(file.path);
-      vision.image = result.secure_url;
+    let imageUrls = vision.image;
+
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map((file) =>
+        cloudinary.uploadImageToCloudinary(file.buffer)
+      );
+      imageUrls = await Promise.all(uploadPromises);
     }
 
     vision.heading = heading || vision.heading;
     vision.text = text || vision.text;
+    vision.image = imageUrls;
 
     await vision.save();
 

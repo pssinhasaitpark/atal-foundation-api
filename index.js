@@ -43,6 +43,6 @@ const port = process.env.PORT || 5050;
 
 
 app.listen(port,  () =>
-  console.log(`🚀 App is listening at port:http://${host}:${port}`)
+  console.log(`🚀 Server is Running at port:http://${host}:${port}`)
 );
 
