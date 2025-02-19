@@ -4,17 +4,14 @@ const visionSchema = new mongoose.Schema({
   heading: {
     type: String,
     required: true,
-    maxlength: 100,
   },
   text: {
     type: String,
     required: true,
-    maxlength: 2000,
   },
-  image: {
-    type: String,
-    required: true,
-  },
+     image:
+     [String],
+     
   createdAt: {
     type: Date,
     default: Date.now,

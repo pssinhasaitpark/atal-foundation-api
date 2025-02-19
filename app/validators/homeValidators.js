@@ -6,3 +6,4 @@ const homeValidator = [
 ];
 
 module.exports = homeValidator;
+

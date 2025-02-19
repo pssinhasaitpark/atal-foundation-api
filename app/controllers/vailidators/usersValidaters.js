@@ -22,8 +22,7 @@ const userRegistrationFormSchema = Joi.object({
   state: Joi.string().required(),
   category: Joi.string().required(),
   designation: Joi.string().required(),
-  message: Joi.string().optional(),
-  photo: Joi.string().optional(),
+  message: Joi.string().optional()
 });
 
 const userLoginSchema = Joi.object({

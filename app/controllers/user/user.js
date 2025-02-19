@@ -4,6 +4,8 @@ const { errorResponse, successResponse } = require("../../utils/helper");
 const { Users } = require("../../models");
 const UserForm = require("../../models/userForm");
 const { jwtAuthentication } = require("../../middlewares");
+const cloudinary = require("../../middlewares/cloudinary");
+
 
 exports.registerUser = async (req, res) => {
   const { error } = userRegistrationSchema.validate(req.body);
@@ -182,12 +184,14 @@ exports.registerForm = async (req, res) => {
   }
 
   const { first_name, last_name, email, mobile, address, gender, date_of_birth, city, state, category, designation, message } = req.body;
-
-  const photoUrl = req.file ? req.file.path : null;
-
-  if (!photoUrl) {
-    return errorResponse(res, "Photo is required.", 400);
+  let imageUrls = [];
+  if (req.files && req.files.length > 0) {
+    const uploadPromises = req.files.map((file) =>
+      cloudinary.uploadImageToCloudinary(file.buffer)
+    );
+    imageUrls = await Promise.all(uploadPromises);
   }
+console.log("imagers=======================",imageUrls);
 
   try {
     const existingUser = await Users.findOne({ email });
@@ -206,7 +210,7 @@ exports.registerForm = async (req, res) => {
       category,
       designation,
       message,
-      photo: photoUrl,  
+      images: imageUrls,  
       user_role: "user",
     };
 
@@ -216,7 +220,7 @@ exports.registerForm = async (req, res) => {
     successResponse(
       res,
       "User Registration Form Successfully Submitted with full information!",
-      { first_name, last_name, email, mobile, address, gender, date_of_birth, city, state, category, designation, message, photo: photoUrl },
+      { first_name, last_name, email, mobile, address, gender, date_of_birth, city, state, category, designation, message, images:imageUrls },
       201
     );
   } catch (error) {

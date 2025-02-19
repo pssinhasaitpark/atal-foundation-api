@@ -1,15 +1,16 @@
 
 const express = require('express');
 const router = express.Router();
-const multer = require('../middlewares/multer');
-const { createHomeSection, getAllHomeSections, getHomeSectionById, updateHomeSection, deleteHomeSection } = require('../controllers/home/homeController');
+const { home } = require('../controllers');
+const { upload, convertImagesToWebP } = require('../middlewares/fileUploader');
 const homeValidator = require('../validators/homeValidators');
 const { verifyUser, verifyAdmin } = require('../middlewares/jwtAuth');
 
-router.post('/create', verifyUser, verifyAdmin, multer.array('images'), homeValidator, createHomeSection);
-router.get('/', getAllHomeSections);
-router.get('/:id', getHomeSectionById);
-router.put('/update/:id', verifyUser, verifyAdmin, multer.array('images'), homeValidator, updateHomeSection);
-router.delete('/delete/:id', verifyUser, verifyAdmin, deleteHomeSection);
+router.post('/create', verifyUser, verifyAdmin, upload, convertImagesToWebP, homeValidator, home.createHomeSection);
+router.get('/', home.getAllHomeSections);
+router.get('/:id', home.getHomeSectionById);
+router.put('/:id', verifyUser, verifyAdmin, upload, convertImagesToWebP, homeValidator, home.updateHomeSection);
+router.delete('/:id', verifyUser, verifyAdmin, home.deleteHomeSection);
 
 module.exports = router;
+

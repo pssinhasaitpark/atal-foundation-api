@@ -1,6 +1,5 @@
-const Vision = require("../../models/vision");
+const {Vision} = require("../../models");
 const cloudinary = require("../../middlewares/cloudinary");
-const multer = require("../../middlewares/multer");
 const { validationResult } = require("express-validator");
 
 const createVision = async (req, res) => {
@@ -10,15 +9,20 @@ const createVision = async (req, res) => {
   }
 
   try {
-    const file = req.file;
-    const result = await cloudinary.uploader.upload(file.path);
-
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map((file) =>
+        cloudinary.uploadImageToCloudinary(file.buffer)
+      );
+      imageUrls = await Promise.all(uploadPromises);
+    }
+  
     const { heading, text } = req.body;
 
     const newVision = new Vision({
       heading,
       text,
-      image: result.secure_url,
+      image: imageUrls,
     });
 
     await newVision.save();
@@ -35,7 +39,7 @@ const createVision = async (req, res) => {
 
 const getAllVision = async (req, res) => {
   try {
-    const visions = await Vision.find();
+    const visions = await Vision.find().sort({ createdAt: -1 });
     res.status(200).json({ visions });
   } catch (error) {
     res

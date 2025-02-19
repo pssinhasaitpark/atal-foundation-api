@@ -1,41 +1,42 @@
-const Home = require("../../models/home");
+const  Home  = require("../../models/home");
 const cloudinary = require("../../middlewares/cloudinary");
-const multer = require("../../middlewares/multer");
 const { validationResult } = require("express-validator");
 
 const createHomeSection = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
-    }
-  
-    if (!req.files || req.files.length === 0) {
+  }
+
+  if (!req.files || req.files.length === 0) {
       return res.status(400).json({ errors: [{ msg: 'At least one image is required', param: 'images' }] });
-    }
-  
-    try {
+  }
+
+  try {
       const { text, link } = req.body;
-      const images = req.files; 
-  
+      const images = req.files;
+
       const imageUrls = [];
-      for (let file of images) {
-        const result = await cloudinary.uploader.upload(file.path);
-        imageUrls.push(result.secure_url); 
-      }
-  
+
+      const uploadPromises = images.map((file) => 
+          cloudinary.uploadImageToCloudinary(file.buffer) 
+      );
+
+      imageUrls.push(...await Promise.all(uploadPromises));
+
       const newHomeSection = new Home({
-        text,
-        images: imageUrls,
-        link,
+          text,
+          images: imageUrls,
+          link,
       });
-  
+
       await newHomeSection.save();
-  
+
       res.status(201).json({ message: "Home section created successfully", home: newHomeSection });
-    } catch (error) {
+  } catch (error) {
       res.status(500).json({ message: "Error creating Home section", error: error.message });
-    }
-  };
+  }
+};
 
 const getAllHomeSections = async (req, res) => {
   try {
@@ -77,8 +78,8 @@ const updateHomeSection = async (req, res) => {
       if (req.files && req.files.length > 0) {
         const imageUrls = [];
         for (let file of req.files) {
-          const result = await cloudinary.uploader.upload(file.path);
-          imageUrls.push(result.secure_url);
+          const imageUrl = await cloudinary.uploadImageToCloudinary(file.buffer);
+          imageUrls.push(imageUrl);
         }
         homeSection.images = imageUrls;
       }
