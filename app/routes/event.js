@@ -1,5 +1,3 @@
-
-// routes/event.js
 const express = require("express");
 const router = express.Router();
 const { event } = require("../controllers"); // Update this line to match your event controller

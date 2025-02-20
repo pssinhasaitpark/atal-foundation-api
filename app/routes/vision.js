@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { vision } = require('../controllers');
 const { upload, convertImagesToWebP } = require('../middlewares/fileUploader');
-const visionValidator = require('../validators/visionValidators');
+const visionValidator = require('../validators/vision');
 const { verifyUser, verifyAdmin } = require('../middlewares/jwtAuth');
 
 
@@ -13,3 +13,4 @@ router.put('/:id', verifyUser, verifyAdmin,upload, convertImagesToWebP, visionVa
 router.delete('/:id', verifyUser, verifyAdmin, vision.deleteVision);
 
 module.exports = router;
+ 

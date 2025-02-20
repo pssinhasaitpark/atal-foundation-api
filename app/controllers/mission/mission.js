@@ -1,6 +1,6 @@
 const Mission = require("../../models/mission");
 const cloudinary = require("../../middlewares/cloudinary");
-const missionValidator = require("../../validators/missionValidators");
+const missionValidator = require("../../validators/mission");
 const { handleResponse } = require("../../utils/helper")
 
 const createMission = async (req, res) => {
