@@ -83,6 +83,7 @@ exports.loginUser = async (req, res) => {
     const encryptedToken = jwtAuthentication.encryptToken(accessToken);
 
     if (user.user_role === "super-admin") {
+      console.log("Super Admin Login Succesfully");
       return successResponse(
         res,
         `Super Admin Login Successfully!`,

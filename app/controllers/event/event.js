@@ -1,6 +1,6 @@
 const Event = require("../../models/event");
 const cloudinary = require("../../middlewares/cloudinary");
-const eventValidator = require("../../validators/eventValidators");
+const eventValidator = require("../../validators/event");
 const { handleResponse } = require("../../utils/helper");
 
 const createEvent = async (req, res) => {

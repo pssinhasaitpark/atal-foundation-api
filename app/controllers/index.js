@@ -4,5 +4,7 @@ module.exports = {
     home: require("./home/home"), 
     mission: require("./mission/mission"),
     event: require("./event/event"),
-    contact: require("./contact/contact")
+    contact: require("./contact/contact"),
+    message: require("./message/message"),
+    gallery: require("./gallery/gallery")
 }

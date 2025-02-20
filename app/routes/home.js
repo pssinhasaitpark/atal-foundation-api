@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { home } = require('../controllers');
 const { upload, convertImagesToWebP } = require('../middlewares/fileUploader');
-const homeValidator = require('../validators/homeValidators');
+const homeValidator = require('../validators/home');
 const { verifyUser, verifyAdmin } = require('../middlewares/jwtAuth');
 
 router.post('/create', verifyUser, verifyAdmin, upload, convertImagesToWebP, homeValidator, home.createHomeSection);
