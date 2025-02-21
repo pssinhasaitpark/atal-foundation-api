@@ -6,6 +6,7 @@ const Event= require("./event")
 const Contact= require("./contact")
 const Message= require("./message")
 const Gallery= require("./gallery")
+const Subscribers= require("./subscribers")
 module.exports = {
     Users,
     Vision, 
@@ -14,5 +15,6 @@ module.exports = {
     Event,
     Contact,
     Message,
-    Gallery
+    Gallery,
+    Subscribers
 }
