@@ -6,7 +6,7 @@ const { upload, convertImagesToWebP } = require('../middlewares/fileUploader');
 const homeValidator = require('../validators/home');
 const { verifyUser, verifyAdmin } = require('../middlewares/jwtAuth');
 
-router.post('/create', verifyUser, verifyAdmin, upload, convertImagesToWebP, homeValidator, home.createHomeSection);
+router.post('/create', verifyUser, verifyAdmin, upload, convertImagesToWebP, homeValidator, home.createOrUpdateHomeSection);
 router.get('/', home.getAllHomeSections);
 router.get('/:id', home.getHomeSectionById);
 router.put('/:id', verifyUser, verifyAdmin, upload, convertImagesToWebP, homeValidator, home.updateHomeSection);

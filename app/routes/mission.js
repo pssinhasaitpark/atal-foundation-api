@@ -4,7 +4,7 @@ const { mission } = require("../controllers");
 const { upload , convertImagesToWebP} = require("../middlewares/fileUploader");
 const { verifyUser, verifyAdmin } = require("../middlewares/jwtAuth");
 
-router.post("/create", verifyUser, verifyAdmin, upload, convertImagesToWebP, mission.createMission);
+router.post("/create", verifyUser, verifyAdmin, upload, convertImagesToWebP, mission.createOrUpdateMission);
 router.get("/", mission.getAllMissions);
 router.get("/:id", mission.getMissionById);
 router.put("/:id", verifyUser, verifyAdmin, upload, convertImagesToWebP, mission.updateMission);
