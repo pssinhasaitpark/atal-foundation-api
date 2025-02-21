@@ -2,39 +2,88 @@ const  Home  = require("../../models/home");
 const cloudinary = require("../../middlewares/cloudinary");
 const { validationResult } = require("express-validator");
 
-const createHomeSection = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-  }
+// const createHomeSection = async (req, res) => {
+//   const errors = validationResult(req);
+//   if (!errors.isEmpty()) {
+//       return res.status(400).json({ errors: errors.array() });
+//   }
 
-  if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ errors: [{ msg: 'At least one image is required', param: 'images' }] });
-  }
+//   if (!req.files || req.files.length === 0) {
+//       return res.status(400).json({ errors: [{ msg: 'At least one image is required', param: 'images' }] });
+//   }
 
+//   try {
+//       const { text, link } = req.body;
+//       const images = req.files;
+
+//       const imageUrls = [];
+
+//       const uploadPromises = images.map((file) => 
+//           cloudinary.uploadImageToCloudinary(file.buffer) 
+//       );
+
+//       imageUrls.push(...await Promise.all(uploadPromises));
+
+//       const newHomeSection = new Home({
+//           text,
+//           images: imageUrls,
+//           link,
+//       });
+
+//       await newHomeSection.save();
+
+//       res.status(201).json({ message: "Home section created successfully", home: newHomeSection });
+//   } catch (error) {
+//       res.status(500).json({ message: "Error creating Home section", error: error.message });
+//   }
+// };
+
+const createOrUpdateHomeSection = async (req, res) => {
   try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+          return res.status(400).json({ errors: errors.array() });
+      }
+
       const { text, link } = req.body;
-      const images = req.files;
+      const { id } = req.query; 
 
-      const imageUrls = [];
+      let existingHomeSection = null;
+      if (id) {
+          existingHomeSection = await Home.findById(id);
+      }
 
-      const uploadPromises = images.map((file) => 
-          cloudinary.uploadImageToCloudinary(file.buffer) 
-      );
+      let imageUrls = existingHomeSection ? existingHomeSection.images : []; 
+      if (req.files && req.files.length > 0) {
+          const uploadPromises = req.files.map((file) =>
+              cloudinary.uploadImageToCloudinary(file.buffer)
+          );
+          imageUrls = await Promise.all(uploadPromises);
+      } else if (!existingHomeSection) {
+          return res.status(400).json({ errors: [{ msg: "At least one image is required", param: "images" }] });
+      }
 
-      imageUrls.push(...await Promise.all(uploadPromises));
+      if (existingHomeSection) {
+          existingHomeSection.set({
+              text: text || existingHomeSection.text,
+              link: link || existingHomeSection.link,
+              images: imageUrls,
+          });
 
-      const newHomeSection = new Home({
-          text,
-          images: imageUrls,
-          link,
-      });
+          await existingHomeSection.save();
+          return res.status(200).json({ message: "Home section updated successfully!", home: existingHomeSection.toObject() });
+      } else {
+          const newHomeSection = new Home({
+              text,
+              link,
+              images: imageUrls,
+          });
 
-      await newHomeSection.save();
-
-      res.status(201).json({ message: "Home section created successfully", home: newHomeSection });
+          await newHomeSection.save();
+          return res.status(201).json({ message: "Home section created successfully!", home: newHomeSection.toObject() });
+      }
   } catch (error) {
-      res.status(500).json({ message: "Error creating Home section", error: error.message });
+      return res.status(500).json({ message: "Error creating or updating Home section", error: error.message });
   }
 };
 
@@ -110,7 +159,7 @@ const deleteHomeSection = async (req, res) => {
 };
 
 module.exports = {
-  createHomeSection,
+  createOrUpdateHomeSection,
   getAllHomeSections,
   getHomeSectionById,
   updateHomeSection,

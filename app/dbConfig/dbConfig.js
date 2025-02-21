@@ -1,10 +1,9 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 
-const dbURI = `${process.env.MONGODB_URI}`; 
     const connectDB = async () => {
     try {
-        await mongoose.connect(dbURI, {
+        await mongoose.connect(process.env.MONGODB_URI, {
             serverSelectionTimeoutMS: 10000, 
         });
         console.log('✅ MongoDB connected...');

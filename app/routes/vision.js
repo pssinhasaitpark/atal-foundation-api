@@ -6,7 +6,7 @@ const visionValidator = require('../validators/vision');
 const { verifyUser, verifyAdmin } = require('../middlewares/jwtAuth');
 
 
-router.post('/create', verifyUser, verifyAdmin, upload, convertImagesToWebP, visionValidator, vision.createVision);
+router.post('/create', verifyUser, verifyAdmin, upload, convertImagesToWebP, visionValidator, vision.createOrUpdateVision);
 router.get('/', vision.getAllVision);
 router.get('/:id', vision.getVisionById);
 router.put('/:id', verifyUser, verifyAdmin,upload, convertImagesToWebP, visionValidator, vision.updateVision);

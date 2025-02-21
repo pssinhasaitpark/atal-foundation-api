@@ -12,7 +12,11 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "http://localhost:3001"
+      "http://localhost:3001",
+      "http://192.168.0.131:3000",
+      "http://192.168.0.115:3000",
+      "https://admin-atal-foundation.netlify.app",
+      "https://atal-foundation.netlify.app"
     ],
     methods: ["GET", "POST", "HEAD", "PUT", "PATCH", "DELETE"],
     optionsSuccessStatus: 200,

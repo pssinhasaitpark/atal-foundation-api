@@ -4,7 +4,7 @@ const { gallery } = require("../controllers");
 const { verifyUser, verifyAdmin } = require("../middlewares/jwtAuth");
 const { upload, convertImagesToWebP } = require("../middlewares/fileUploader");
 
-router.post("/create",verifyUser, verifyAdmin, upload, convertImagesToWebP, gallery.createGallery);
+router.post("/create",verifyUser, verifyAdmin, upload, convertImagesToWebP, gallery.createOrUpdateGallery);
 router.get("/", gallery.getAllGallery);
 router.get("/:id", gallery.getGalleryById);
 router.put("/:id",verifyUser,verifyAdmin,upload,convertImagesToWebP,gallery.updateGalleryById);

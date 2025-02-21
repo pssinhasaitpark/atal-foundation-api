@@ -3,35 +3,82 @@ const cloudinary = require("../../middlewares/cloudinary");
 const { galleryValidation } = require("../../validators/gallery");
 const { handleResponse } = require("../../utils/helper");
 
-const createGallery = async (req, res) => {
+// const createGallery = async (req, res) => {
+//     const { error } = galleryValidation.validate(req.body);
+//     if (error) {
+//       return handleResponse(res, 400, "Validation error", { errors: error.details });
+//     }
+  
+//     try {
+//       let imageUrls = [];
+//       if (req.files && req.files.length > 0) {
+//         const uploadPromises = req.files.map((file) =>
+//           cloudinary.uploadImageToCloudinary(file.buffer)
+//         );
+//         imageUrls = await Promise.all(uploadPromises);
+//       }
+  
+//       const { title } = req.body;
+//       const newGallery = new Gallery({
+//         title,
+//         images: imageUrls,
+//       });
+  
+//       await newGallery.save();
+  
+//       return handleResponse(res, 201, "Gallery created successfully", { gallery: newGallery });
+//     } catch (error) {
+//       return handleResponse(res, 500, "Error creating gallery", { error: error.message });
+//     }
+// };
+  
+const createOrUpdateGallery = async (req, res) => {
+  try {
     const { error } = galleryValidation.validate(req.body);
     if (error) {
       return handleResponse(res, 400, "Validation error", { errors: error.details });
     }
-  
-    try {
-      let imageUrls = [];
-      if (req.files && req.files.length > 0) {
-        const uploadPromises = req.files.map((file) =>
-          cloudinary.uploadImageToCloudinary(file.buffer)
-        );
-        imageUrls = await Promise.all(uploadPromises);
-      }
-  
-      const { title } = req.body;
+
+    const { title } = req.body;
+    const { id } = req.query; 
+
+    let existingGallery = null;
+    if (id) {
+      existingGallery = await Gallery.findById(id);
+    }
+
+    let imageUrls = existingGallery ? existingGallery.images : []; 
+
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map((file) =>
+        cloudinary.uploadImageToCloudinary(file.buffer)
+      );
+      imageUrls = await Promise.all(uploadPromises);
+    }
+
+    if (existingGallery) {
+      existingGallery.set({
+        title: title || existingGallery.title,
+        images: imageUrls,
+      });
+
+      await existingGallery.save();
+      return handleResponse(res, 200, "Gallery Updated Successfully!", { gallery: existingGallery.toObject() });
+    } else {
+      // Create a new gallery
       const newGallery = new Gallery({
         title,
         images: imageUrls,
       });
-  
+
       await newGallery.save();
-  
-      return handleResponse(res, 201, "Gallery created successfully", { gallery: newGallery });
-    } catch (error) {
-      return handleResponse(res, 500, "Error creating gallery", { error: error.message });
+      return handleResponse(res, 201, "Gallery Created Successfully!", { gallery: newGallery.toObject() });
     }
+  } catch (error) {
+    return handleResponse(res, 500, "Error Creating or Updating Gallery", { error: error.message });
+  }
 };
-  
+
 const getAllGallery = async (req, res) => {
   try {
     const galleries = await Gallery.find().sort({ createdAt: -1 });
@@ -111,7 +158,7 @@ const deleteGalleryById = async (req, res) => {
 };
 
 module.exports = {
-  createGallery,
+  createOrUpdateGallery,
   getAllGallery,
   getGalleryById,
   updateGalleryById,
