@@ -6,6 +6,7 @@ const eventRoutes= require("./event");
 const contactRoutes= require("./contact");
 const messageRoutes= require("./message");
 const galleryRoutes= require("./gallery");
+const subscribeRoutes= require("./subscribe")
 
 module.exports = (app) => {
   app.use("/api", userRoutes);
@@ -16,4 +17,5 @@ module.exports = (app) => {
   app.use("/api/contact",contactRoutes);
   app.use("/api/message", messageRoutes);
   app.use("/api/gallery", galleryRoutes);
+  app.use("/api/subscribers", subscribeRoutes);
 };

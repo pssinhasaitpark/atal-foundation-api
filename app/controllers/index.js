@@ -6,5 +6,6 @@ module.exports = {
     event: require("./event/event"),
     contact: require("./contact/contact"),
     message: require("./message/message"),
-    gallery: require("./gallery/gallery")
+    gallery: require("./gallery/gallery"),
+    subscribers: require("./subscribers/subscribers")
 }
