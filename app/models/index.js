@@ -7,6 +7,8 @@ const Contact= require("./contact")
 const Message= require("./message")
 const Gallery= require("./gallery")
 const Subscribers= require("./subscribers")
+const About= require("./about")
+const SocialMedia= require("./socialMedia")
 module.exports = {
     Users,
     Vision, 
@@ -16,5 +18,7 @@ module.exports = {
     Contact,
     Message,
     Gallery,
-    Subscribers
+    Subscribers,
+    About,
+    SocialMedia
 }

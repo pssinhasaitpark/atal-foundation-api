@@ -6,7 +6,7 @@ const notifySubscribers = async (req, res, next) => {
     if (req.method === "POST" && req.contentCreated) {
       const subscribers = await Subscribers.find();
       const subject = "New Content Posted on ATAL FOUNDATION";
-    const message = `Check out our new content: <a href="https://admin-atal-foundation.netlify.app ${req.contentTitle}">${req.contentTitle}</a>`;
+    const message = `Check out our new content: <a href="https://atal-foundation.netlify.app ${req.contentTitle}">${req.contentTitle}</a>`;
 
 
       const emailPromises = subscribers.map(subscriber => {
