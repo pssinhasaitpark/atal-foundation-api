@@ -18,7 +18,7 @@ const subscribeUser = async (req, res) => {
     const newSubscriber = new Subscribers({ email });
     await newSubscriber.save();
 
-    await sendEmail(email, "Subscription Confirmation from ATAL FOUNDATION", `Thank you for Subscribing! \n Best Regards!!! \n ATAL FOUNDATION`);
+    await sendEmail(email, "Subscription Confirmation from ATAL FOUNDATION", `Thank you for Subscribing! \nBest Regards!!! \nATAL FOUNDATION`);
 
     return handleResponse(res, 201, "Subscribed successfully!", {
       subscriber: newSubscriber,

@@ -7,5 +7,7 @@ module.exports = {
     contact: require("./contact/contact"),
     message: require("./message/message"),
     gallery: require("./gallery/gallery"),
-    subscribers: require("./subscribers/subscribers")
+    subscribers: require("./subscribers/subscribers"),
+    about: require("./about/about"),
+    socialMedia: require("./socialMedia/socialMedia")
 }

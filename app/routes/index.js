@@ -7,7 +7,8 @@ const contactRoutes= require("./contact");
 const messageRoutes= require("./message");
 const galleryRoutes= require("./gallery");
 const subscribeRoutes= require("./subscribe")
-
+const aboutRoutes= require("./about")
+const socialMediaRoutes= require("./socialMedia")
 module.exports = (app) => {
   app.use("/api", userRoutes);
   app.use('/api/vision', visionRoutes);
@@ -18,4 +19,6 @@ module.exports = (app) => {
   app.use("/api/message", messageRoutes);
   app.use("/api/gallery", galleryRoutes);
   app.use("/api/subscribers", subscribeRoutes);
+  app.use("/api/about", aboutRoutes);
+  app.use("/api/social-media", socialMediaRoutes)
 };
