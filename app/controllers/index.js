@@ -9,5 +9,7 @@ module.exports = {
     gallery: require("./gallery/gallery"),
     subscribers: require("./subscribers/subscribers"),
     about: require("./about/about"),
-    socialMedia: require("./socialMedia/socialMedia")
+    socialMedia: require("./socialMedia/socialMedia"),
+    category: require("./categories/categories"), // Add category controller
+    programme: require("./ourProgrammes/ourProgrammes"), // Add programme controller
 }

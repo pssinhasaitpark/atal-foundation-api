@@ -2,7 +2,7 @@ const About = require("../../models/about");
 const sharp = require('sharp');
 const cloudinary = require("cloudinary").v2;
 const mongoose = require("mongoose");
-
+/*
 const createAboutSection = async (req, res) => {
   try {
     let removeImages = [];
@@ -113,6 +113,116 @@ const createAboutSection = async (req, res) => {
     res.status(500).json({ error: "An error occurred while creating or updating the About section." });
   }
 };
+*/
+
+const createAboutSection = async (req, res) => {
+  try {
+    let removeImages = [];
+    if (req.body.removeImages) {
+      try {
+        removeImages = JSON.parse(req.body.removeImages);
+      } catch (error) {
+        return res.status(400).json({ error: "Invalid removeImages format. Must be a JSON array." });
+      }
+    }
+
+    const bannerImage = req.files?.banner ? req.files.banner[0] : null;
+    const images = req.files?.images || [];
+
+    const uploadBannerImage = bannerImage
+      ? new Promise((resolve, reject) => {
+          sharp(bannerImage.buffer)
+            .webp()
+            .toBuffer()
+            .then((webpBuffer) => {
+              cloudinary.uploader.upload_stream(
+                { resource_type: "image" },
+                (error, result) => {
+                  if (error) {
+                    reject(error);
+                  } else {
+                    resolve(result.secure_url);
+                  }
+                }
+              ).end(webpBuffer);
+            })
+            .catch((error) => reject(error));
+        })
+      : Promise.resolve("");
+
+    const uploadImages = images.map((image) =>
+      new Promise((resolve, reject) => {
+        sharp(image.buffer)
+          .webp()
+          .toBuffer()
+          .then((webpBuffer) => {
+            cloudinary.uploader.upload_stream(
+              { resource_type: "image" },
+              (error, result) => {
+                if (error) {
+                  reject(error);
+                } else {
+                  resolve(result.secure_url);
+                }
+              }
+            ).end(webpBuffer);
+          })
+          .catch((error) => reject(error));
+      })
+    );
+
+    const uploadResults = await Promise.allSettled([uploadBannerImage, ...uploadImages]);
+
+    const bannerUrl = uploadResults[0].status === "fulfilled" ? uploadResults[0].value : "";
+    const imageUrls = uploadResults.slice(1).map((result) => (result.status === "fulfilled" ? result.value : ""));
+
+    let existingAbout = await About.findOne({});
+
+    if (!req.body.data && bannerUrl) {
+      if (!existingAbout) {
+        existingAbout = new About({ banner: bannerUrl, sections: [] });
+      } else {
+        existingAbout.banner = bannerUrl;
+      }
+
+      await existingAbout.save();
+      return res.status(200).json({ message: "Banner updated successfully!", existingAbout });
+    }
+
+    const sectionsData = (req.body.data || []).map((section, index) => ({
+      title: section.title,
+      description: section.description,
+      image: imageUrls[index] || imageUrls[0] || "",
+    }));
+
+    if (removeImages.length > 0) {
+      sectionsData.forEach((section) => {
+        if (removeImages.includes(section.image)) {
+          section.image = "";
+        }
+      });
+    }
+
+    if (existingAbout) {
+      existingAbout.sections.push(...sectionsData);
+      if (bannerUrl) {
+        existingAbout.banner = bannerUrl;
+      }
+      await existingAbout.save();
+      return res.status(200).json({ message: "About section updated successfully!", existingAbout });
+    } else {
+      const newAbout = new About({
+        banner: bannerUrl,
+        sections: sectionsData,
+      });
+      await newAbout.save();
+      return res.status(201).json({ message: "About section created successfully!", newAbout });
+    }
+  } catch (error) {
+    console.error("Error updating About section:", error);
+    res.status(500).json({ error: "An error occurred while creating or updating the About section." });
+  }
+};
 
 const getAllAboutSections = async (req, res) => {
     try {
@@ -137,7 +247,7 @@ const getAboutSection = async (req, res) => {
     res.status(500).json({ error: "An error occurred while fetching About section." });
   }
 };
-
+/*
 const updateAboutSection = async (req, res) => {
     try {
         const { aboutId, sectionId } = req.params;
@@ -155,7 +265,6 @@ const updateAboutSection = async (req, res) => {
         if (!section) {
             return res.status(404).json({ message: "Section not found." });
         }
-
         let uploadedImageUrls = [];
         if (req.files?.image) {
             const imageFiles = Array.isArray(req.files.image) ? req.files.image : [req.files.image];
@@ -174,11 +283,13 @@ const updateAboutSection = async (req, res) => {
                 uploadedImageUrls.push(uploadedImageUrl);
             }
         }
+        console.log("DSWGYJUY---------", uploadedImageUrls)
         section.set({
             title: req.body.title || section.title,
             description: req.body.description || section.description,
             images: uploadedImageUrls.length > 0 ? uploadedImageUrls : section.images, 
         });
+        
 
 
         await about.save();
@@ -190,6 +301,66 @@ const updateAboutSection = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "An error occurred while updating the section." });
     }
+};
+*/
+
+const updateAboutSection = async (req, res) => {
+  try {
+      const { aboutId, sectionId } = req.params;
+
+      if (!mongoose.Types.ObjectId.isValid(aboutId) || !mongoose.Types.ObjectId.isValid(sectionId)) {
+          return res.status(400).json({ message: "Invalid ID format." });
+      }
+
+      const about = await About.findById(aboutId);
+      if (!about) {
+          return res.status(404).json({ message: "About section not found." });
+      }
+
+      const section = about.sections.id(sectionId);
+      if (!section) {
+          return res.status(404).json({ message: "Section not found." });
+      }
+
+
+      let uploadedImageUrls = [];
+      if (req.files?.images) { 
+          const imageFiles = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+
+          for (const imageFile of imageFiles) {
+              const imageBuffer = await sharp(imageFile.buffer).webp().toBuffer();
+
+              const uploadedImageUrl = await new Promise((resolve, reject) => {
+                  const stream = cloudinary.uploader.upload_stream({ resource_type: "image" }, (error, result) => {
+                      if (error) reject(error);
+                      else resolve(result.secure_url);
+                  });
+                  stream.end(imageBuffer);
+              });
+
+              uploadedImageUrls.push(uploadedImageUrl);
+          }
+      }
+
+
+      section.title = req.body.title || section.title;
+      section.description = req.body.description || section.description;
+      if (uploadedImageUrls.length > 0) {
+          section.image = uploadedImageUrls[0];  
+      }
+
+      about.markModified("sections"); 
+      await about.save();
+
+
+      res.status(200).json({
+          message: "Section updated successfully!",
+          updatedSection: about.sections.id(sectionId),
+      });
+  } catch (error) {
+      console.error("Error updating section:", error);
+      res.status(500).json({ error: "An error occurred while updating the section." });
+  }
 };
 
 const deleteAboutSection = async (req, res) => {

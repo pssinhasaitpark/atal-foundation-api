@@ -617,7 +617,6 @@ const updateGalleryBySection = async (req, res) => {
   }
 };
 
-
 // const updateGalleryBySection = async (req, res) => {
 //   try {
 //     const { galleryId } = req.query; // ✅ Expect galleryId in query params

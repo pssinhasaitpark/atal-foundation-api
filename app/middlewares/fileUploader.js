@@ -21,22 +21,24 @@ const fileFilter = (req, file, cb) => {
 //     limits: { fieldSize: 50 * 1024 * 1024 }
 // }).array("images", 10);
 
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 50 * 1024 * 1024 }, 
-}).fields([
-  { name: "banner", maxCount: 1 },
-  { name: "images", maxCount: 10 },
-]);
-
 // const upload = multer({
-//     storage: storage,
-//     limits: { fileSize: 50 * 1024 * 1024 }, // Limit file size to 10MB
-//   }).fields([
-//     { name: "images", maxCount: 10 }, // Accept up to 10 images
-//     { name: "videos", maxCount: 5 }   // Accept up to 5 videos
-//   ]);
+//   storage,
+//   fileFilter,
+//   limits: { fileSize: 50 * 1024 * 1024 }, 
+// }).fields([
+//   { name: "banner", maxCount: 1 },
+//   { name: "images", maxCount: 10 },
+// ]);
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 }, // Limit file size to 10MB
+  }).fields([
+    { name: "images", maxCount: 10 }, // Accept up to 10 images
+    { name: "videos", maxCount: 5 },  // Accept up to 5 videos
+    { name: "banner", maxCount: 1 }
+    
+  ]);
 
 const convertImagesToWebP = async (req, res, next) => {
   try {

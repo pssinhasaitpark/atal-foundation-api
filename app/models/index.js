@@ -9,6 +9,8 @@ const Gallery= require("./gallery")
 const Subscribers= require("./subscribers")
 const About= require("./about")
 const SocialMedia= require("./socialMedia")
+const Category= require("./categories")
+const Programme= require("./ourProgrammes")
 module.exports = {
     Users,
     Vision, 
@@ -20,5 +22,7 @@ module.exports = {
     Gallery,
     Subscribers,
     About,
-    SocialMedia
+    SocialMedia,
+    Category,
+    Programme
 }
