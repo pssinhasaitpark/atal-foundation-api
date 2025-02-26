@@ -14,12 +14,12 @@ const router = express.Router();
 const { about } = require("../controllers");
 const { upload, convertImagesToWebP } = require("../middlewares/fileUploader");
 
-router.post("/", upload, convertImagesToWebP, about.createAboutSection); // Create About Section
+router.post("/", upload, convertImagesToWebP, about.createAboutSection); 
 router.get("/", about.getAllAboutSections);
-router.get("/:id", about.getAboutSection); // Read About Section by ObjectId
-router.patch("/:aboutId/sections/:sectionId",upload, about.updateAboutSection);
+router.get("/:id", about.getAboutSection); 
+router.patch("/:aboutId/sections/:sectionId",upload,convertImagesToWebP, about.updateAboutSection);
 router.delete('/:aboutId/sections/:sectionId', about.deleteAboutSection);
-router.post("/:id/remove-image", about.removeImageFromAboutSection); // Remove Image from About Section
+router.post("/:id/remove-image", about.removeImageFromAboutSection); 
 
 module.exports = router;
 

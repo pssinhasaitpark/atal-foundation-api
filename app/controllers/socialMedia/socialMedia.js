@@ -33,27 +33,26 @@ const createSocialMedia = async (req, res) => {
   
 const updateSocialMedia = async (req, res) => {
   try {
-    const { id } = req.params; // Get the document ID from URL params
+    const { id } = req.params; 
     const { whatsapp, facebook, instagram, youtube, linkedIn, snapchat, thread, pinterest, x } = req.body;
 
-    // Find the existing record
     const socialMedia = await SocialMedia.findById(id);
     if (!socialMedia) {
       return res.status(404).json({ message: "Social media record not found." });
     }
 
-    // Update fields (only those provided)
-    socialMedia.set({
-      whatsapp: whatsapp || socialMedia.whatsapp,
-      facebook: facebook || socialMedia.facebook,
-      instagram: instagram || socialMedia.instagram,
-      youtube: youtube || socialMedia.youtube,
-      linkedIn: linkedIn || socialMedia.linkedIn,
-      snapchat: snapchat || socialMedia.snapchat,
-      thread: thread || socialMedia.thread,
-      pinterest: pinterest || socialMedia.pinterest,
-      x: x || socialMedia.x,
-    });
+      socialMedia.set({
+        whatsapp: whatsapp ? { link: whatsapp } : socialMedia.whatsapp,
+        facebook: facebook ? { link: facebook } : socialMedia.facebook,
+        instagram: instagram ? { link: instagram } : socialMedia.instagram,
+        youtube: youtube ? { link: youtube } : socialMedia.youtube,
+        linkedIn: linkedIn ? { link: linkedIn } : socialMedia.linkedIn,
+        snapchat: snapchat ? { link: snapchat } : socialMedia.snapchat,
+        thread: thread ? { link: thread } : socialMedia.thread,
+        pinterest: pinterest ? { link: pinterest } : socialMedia.pinterest,
+        x: x ? { link: x } : socialMedia.x,
+      });
+  
 
     await socialMedia.save();
     return res.status(200).json({ message: "Social media links updated successfully!", socialMedia });
