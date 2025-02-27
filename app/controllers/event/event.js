@@ -3,197 +3,75 @@ const cloudinary = require("../../middlewares/cloudinary");
 const eventValidator = require("../../validators/event");
 const { handleResponse } = require("../../utils/helper");
 
-/*
-const createOrUpdateEvent = async (req, res, next) => {
+const createOrUpdateEvent = async (req, res) => {
   try {
-    let removeImages = [];
-    if (req.body.removeImages) {
-      try {
-        removeImages = JSON.parse(req.body.removeImages); 
-      } catch (error) {
-        return handleResponse(res, 400, "Invalid removeImages format. Must be a JSON array.");
+    const { image_title, image_description, video_title, video_description } = req.body;
+
+    const banner = req.files?.banner
+      ? await cloudinary.uploadImageToCloudinary(req.files.banner[0].buffer)
+      : null;
+
+    if (!banner) {
+      return res.status(400).json({ status: 400, message: "Banner image is required" });
+    }
+
+    let imagesArray = [];
+    if (req.files?.images) {
+      for (let i = 0; i < req.files.images.length; i++) {
+        const file = req.files.images[i];
+        const title = req.body[`image${i + 1}_title`]; // Adjust based on naming convention
+        const description = req.body[`image${i + 1}_description`];
+
+        const imageUrl = await cloudinary.uploadImageToCloudinary(file.buffer);
+        imagesArray.push({
+          url: imageUrl,
+          title: title,
+          description: description,
+        });
       }
     }
 
-    const { title, location, description } = req.body;
-    const { id } = req.query;
-
-    let existingEvent = null;
-    if (id) {
-      existingEvent = await Event.findById(id);
-      if (!existingEvent) {
-        return handleResponse(res, 404, "Event not found");
-      }
-    }
-
-    let imageUrls = existingEvent ? [...existingEvent.images] : [];
-
-    if (Array.isArray(removeImages)) {
-      imageUrls = imageUrls.filter((img) => !removeImages.includes(img));
-    }
-
-    const uploadedImages = req.files?.images || [];  // ✅ Fixed way to access images
-
-    if (uploadedImages.length > 0) {
-      console.log("Uploading images to Cloudinary...", uploadedImages.length);
-      const uploadPromises = uploadedImages.map((file) =>
-        cloudinary.uploadImageToCloudinary(file.buffer)
+    let videoUrls = [];
+    if (req.files?.videos) {
+      const uploadVideoPromises = req.files.videos.map((file) =>
+        cloudinary.uploadVideoToCloudinary(file.buffer)
       );
-      const newImageUrls = await Promise.all(uploadPromises);
-      imageUrls.push(...newImageUrls);
+      videoUrls = await Promise.all(uploadVideoPromises);
     }
 
-    if (existingEvent) {
-      existingEvent.set({
-        title: title || existingEvent.title,
-        location: location || existingEvent.location,
-        description: description || existingEvent.description,
-        images: imageUrls, 
-      });
-
-      await existingEvent.save();
-      req.contentCreated = true; 
-      req.contentTitle = existingEvent.title; 
-
-      next(); 
-
-      return handleResponse(res, 200, "Event updated successfully!", {
-        event: existingEvent.toObject({ virtuals: true }),
-      });
-    } else {
-      const newEvent = new Event({
-        title,
-        location,
-        description,
-        images: imageUrls,
-      });
-
-      await newEvent.save();
-      req.contentCreated = true; 
-      req.contentTitle = newEvent.title; 
-
-      next(); 
-
-      return handleResponse(res, 201, "Event created successfully!", {
-        event: newEvent.toObject({ virtuals: true }),
-      });
-    }
-  } catch (error) {
-    return handleResponse(res, 500, "Error creating or updating event", {
-      error: error.message,
+    const newEvent = new Event({
+      banner,
+      imagesSection: {
+        image_title,
+        image_description,
+        images: imagesArray,
+      },
+      videosSection: {
+        video_title,
+        video_description,
+        videos: videoUrls,
+      },
     });
-  }
-};
-*/
 
-const createOrUpdateEvent = async (req, res, next) => {
-  try {
-    let removeImages = [];
-    let removeVideos = [];
-    
-    // Handling images to remove
-    if (req.body.removeImages) {
-      try {
-        removeImages = JSON.parse(req.body.removeImages); 
-      } catch (error) {
-        return handleResponse(res, 400, "Invalid removeImages format. Must be a JSON array.");
-      }
-    }
+    await newEvent.save();
 
-    // Handling videos to remove
-    if (req.body.removeVideos) {
-      try {
-        removeVideos = JSON.parse(req.body.removeVideos);
-      } catch (error) {
-        return handleResponse(res, 400, "Invalid removeVideos format. Must be a JSON array.");
-      }
-    }
-
-    const { title, location, description } = req.body;
-    const { id } = req.query;
-
-    let existingEvent = null;
-    if (id) {
-      existingEvent = await Event.findById(id);
-      if (!existingEvent) {
-        return handleResponse(res, 404, "Event not found");
-      }
-    }
-
-    let imageUrls = existingEvent ? [...existingEvent.images] : [];
-    let videoUrls = existingEvent ? [...existingEvent.videos] : []; // For videos
-
-    // Remove specified images
-    if (Array.isArray(removeImages)) {
-      imageUrls = imageUrls.filter((img) => !removeImages.includes(img));
-    }
-
-    // Remove specified videos
-    if (Array.isArray(removeVideos)) {
-      videoUrls = videoUrls.filter((vid) => !removeVideos.includes(vid));
-    }
-
-    // Upload new images
-    const uploadedImages = req.files?.images || [];
-    if (uploadedImages.length > 0) {
-      console.log("Uploading images to Cloudinary...", uploadedImages.length);
-      const uploadImagePromises = uploadedImages.map((file) =>
-        cloudinary.uploadImageToCloudinary(file.buffer)
-      );
-      const newImageUrls = await Promise.all(uploadImagePromises);
-      imageUrls.push(...newImageUrls);
-    }
-
-    // Upload new videos
-    const uploadedVideos = req.files?.videos || []; // Ensure you're handling video uploads
-    if (uploadedVideos.length > 0) {
-      console.log("Uploading videos to Cloudinary...", uploadedVideos.length);
-      const uploadVideoPromises = uploadedVideos.map((file) =>
-        cloudinary.uploadVideoToCloudinary(file.buffer) // Ensure you have a method to upload videos
-      );
-      const newVideoUrls = await Promise.all(uploadVideoPromises);
-      videoUrls.push(...newVideoUrls);
-    }
-
-    if (existingEvent) {
-      existingEvent.set({
-        title: title || existingEvent.title,
-        location: location || existingEvent.location,
-        description: description || existingEvent.description,
-        images: imageUrls, 
-        videos: videoUrls, // Add the videos to the event
-      });
-
-      await existingEvent.save();
-      req.contentCreated = true; 
-      req.contentTitle = existingEvent.title; 
-
-      next(); 
-
-      return handleResponse(res, 200, "Event updated successfully!", {
-        event: existingEvent.toObject({ virtuals: true }),
-      });
-    } else {
-      const newEvent = new Event({
-        title,
-        location,
-        description,
-        images: imageUrls,
-        videos: videoUrls, // Add the videos to the new event
-      });
-
-      await newEvent.save();
-      req.contentCreated = true; 
-      req.contentTitle = newEvent.title; 
-
-      next(); 
-
-      return handleResponse(res, 201, "Event created successfully!", {
-        event: newEvent.toObject({ virtuals: true }),
-      });
-    }
+    return res.status(201).json({
+      status: 201,
+      message: "Event created successfully!",
+      _id: newEvent._id,
+      banner: newEvent.banner,
+      event: {
+        imagesSection: newEvent.imagesSection,
+        videosSection: newEvent.videosSection,
+        createdAt: newEvent.createdAt,
+        updatedAt: newEvent.updatedAt,
+        __v: newEvent.__v,
+      },
+    });
   } catch (error) {
-    return handleResponse(res, 500, "Error creating or updating event", {
+    return res.status(500).json({
+      status: 500,
+      message: "Error creating event",
       error: error.message,
     });
   }
@@ -221,32 +99,81 @@ const getEventById = async (req, res) => {
 };
 
 const updateEvent = async (req, res) => {
-  const { error } = eventValidator.validate(req.body);
-  if (error) {
-    return handleResponse(res, 400, error.details[0].message);
-  }
-
   try {
-    const event = await Event.findById(req.params.id);
+    const { id } = req.params;
+    const { 
+      image_title, image_description, video_title, video_description, 
+      remove_images, remove_videos, remove_banner 
+    } = req.body;
+
+    const event = await Event.findById(id);
     if (!event) {
-      return handleResponse(res, 404, "Event not found");
+      return res.status(404).json({ status: 404, message: "Event not found" });
     }
 
-    if (req.files && req.files.length > 0) {
-      const uploadPromises = req.files.map((file) =>
-        cloudinary.uploadImageToCloudinary(file.buffer)
+    if (remove_banner === "true" && event.banner) {
+      const publicId = event.banner.split("/").pop().split(".")[0]; 
+      await cloudinary.uploader.destroy(publicId); 
+      event.banner = ""; 
+    }
+
+    if (req.files?.banner) {
+      event.banner = await cloudinary.uploadImageToCloudinary(req.files.banner[0].buffer);
+    }
+
+    if (image_title) event.imagesSection.image_title = image_title;
+    if (image_description) event.imagesSection.image_description = image_description;
+
+    let removeImagesArray = [];
+    if (remove_images) {
+      try {
+        removeImagesArray = JSON.parse(remove_images);
+      } catch (error) {
+        return res.status(400).json({ status: 400, message: "Invalid remove_images format. Must be an array." });
+      }
+      event.imagesSection.images = event.imagesSection.images.filter(img => !removeImagesArray.includes(img.url));
+    }
+
+    if (req.files?.images) {
+      for (let i = 0; i < req.files.images.length; i++) {
+        const file = req.files.images[i];
+        const title = req.body[`image${i + 1}_title`];
+        const description = req.body[`image${i + 1}_description`];
+
+        const imageUrl = await cloudinary.uploadImageToCloudinary(file.buffer);
+        event.imagesSection.images.push({
+          url: imageUrl,
+          title: title,
+          description: description,
+        });
+      }
+    }
+
+    if (video_title) event.videosSection.video_title = video_title;
+    if (video_description) event.videosSection.video_description = video_description;
+
+    let removeVideosArray = [];
+    if (remove_videos) {
+      try {
+        removeVideosArray = JSON.parse(remove_videos);
+      } catch (error) {
+        return res.status(400).json({ status: 400, message: "Invalid remove_videos format. Must be an array." });
+      }
+      event.videosSection.videos = event.videosSection.videos.filter(video => !removeVideosArray.includes(video));
+    }
+
+    if (req.files?.videos) {
+      const uploadedVideos = await Promise.all(
+        req.files.videos.map((file) => cloudinary.uploadVideoToCloudinary(file.buffer))
       );
-      event.images = await Promise.all(uploadPromises);
+      event.videosSection.videos.push(...uploadedVideos);
     }
-
-    event.title = req.body.title || event.title;
-    event.location = req.body.location || event.location;
-    event.description = req.body.description || event.description;
 
     await event.save();
-    return handleResponse(res, 200, "Event updated successfully", { event });
+    return res.status(200).json({ status: 200, message: "Event updated successfully", event });
+
   } catch (error) {
-    return handleResponse(res, 500, "Error updating Event", { error: error.message });
+    return res.status(500).json({ status: 500, message: "Error updating event", error: error.message });
   }
 };
 
@@ -262,11 +189,100 @@ const deleteEvent = async (req, res) => {
   }
 };
 
+const updateImageSection = async (req, res) => {
+  try {
+    const { imageSectionId } = req.params;
+    const { image_title, image_description, remove_images } = req.body;
+
+    const event = await Event.findOne({ "imagesSection._id": imageSectionId });
+    if (!event) {
+      return res.status(404).json({ status: 404, message: "Image section not found" });
+    }
+
+    if (image_title) event.imagesSection.image_title = image_title;
+    if (image_description) event.imagesSection.image_description = image_description;
+
+    let removeImagesArray = [];
+    if (remove_images) {
+      try {
+        removeImagesArray = JSON.parse(remove_images); 
+      } catch (error) {
+        return res.status(400).json({ status: 400, message: "Invalid remove_images format. Must be an array." });
+      }
+    }
+
+    if (removeImagesArray.length > 0) {
+      event.imagesSection.images = event.imagesSection.images.filter(img => !removeImagesArray.includes(img.url));
+    }
+
+    if (req.files?.images) {
+      const uploadedImages = await Promise.all(
+        req.files.images.map((file) => {
+          const title = req.body[`image${i + 1}_title`];
+          const description = req.body[`image${i + 1}_description`];
+          return cloudinary.uploadImageToCloudinary(file.buffer).then(imageUrl => ({
+            url: imageUrl,
+            title: title,
+            description: description,
+          }));
+        })
+      );
+      event.imagesSection.images.push(...uploadedImages);
+    }
+
+    await event.save();
+    return res.status(200).json({ status: 200, message: "Image section updated successfully", imagesSection: event.imagesSection });
+  } catch (error) {
+    return res.status(500).json({ status: 500, message: "Error updating image section", error: error.message });
+  }
+};
+
+const updateVideoSection = async (req, res) => {
+  try {
+    const { videoSectionId } = req.params;
+    const { video_title, video_description, remove_videos } = req.body;
+
+    const event = await Event.findOne({ "videosSection._id": videoSectionId });
+    if (!event) {
+      return res.status(404).json({ status: 404, message: "Video section not found" });
+    }
+
+    if (video_title) event.videosSection.video_title = video_title;
+    if (video_description) event.videosSection.video_description = video_description;
+
+    let removeVideosArray = [];
+    if (remove_videos) {
+      try {
+        removeVideosArray = JSON.parse(remove_videos); 
+      } catch (error) {
+        return res.status(400).json({ status: 400, message: "Invalid remove_videos format. Must be an array." });
+      }
+    }
+
+    if (removeVideosArray.length > 0) {
+      event.videosSection.videos = event.videosSection.videos.filter(video => !removeVideosArray.includes(video));
+    }
+
+    if (req.files?.videos) {
+      const uploadedVideos = await Promise.all(
+        req.files.videos.map((file) => cloudinary.uploadVideoToCloudinary(file.buffer))
+      );
+      event.videosSection.videos.push(...uploadedVideos);
+    }
+
+    await event.save();
+    return res.status(200).json({ status: 200, message: "Video section updated successfully", videosSection: event.videosSection });
+  } catch (error) {
+    return res.status(500).json({ status: 500, message: "Error updating video section", error: error.message });
+  }
+};
+
 module.exports = {
   createOrUpdateEvent,
   getEvents,
   getEventById,
   updateEvent,
   deleteEvent,
+  updateImageSection,
+  updateVideoSection
 };
-

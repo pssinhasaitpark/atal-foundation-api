@@ -6,11 +6,11 @@ const eventRoutes= require("./event");
 const contactRoutes= require("./contact");
 const messageRoutes= require("./message");
 const galleryRoutes= require("./gallery");
-const subscribeRoutes= require("./subscribe")
-const aboutRoutes= require("./about")
-const socialMediaRoutes= require("./socialMedia")
-const categoryRoutes= require("./categories")
-const programmeRoutes=require("./ourProgrammes")
+const subscribeRoutes= require("./subscribe");
+const aboutRoutes= require("./about");
+const socialMediaRoutes= require("./socialMedia");
+const ourProgrammeRoutes= require("./ourProgramme");
+
 module.exports = (app) => {
   app.use("/api", userRoutes);
   app.use('/api/vision', visionRoutes);
@@ -22,7 +22,6 @@ module.exports = (app) => {
   app.use("/api/gallery", galleryRoutes);
   app.use("/api/subscribers", subscribeRoutes);
   app.use("/api/about", aboutRoutes);
-  app.use("/api/social-media", socialMediaRoutes)
-  app.use("/api/category", categoryRoutes);
-  app.use("/api/ourProgrammes", programmeRoutes);
+  app.use("/api/social-media", socialMediaRoutes);
+  app.use("/api/our-programme", ourProgrammeRoutes);
 };
