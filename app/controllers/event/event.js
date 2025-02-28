@@ -2,7 +2,8 @@ const Event = require("../../models/event");
 const cloudinary = require("../../middlewares/cloudinary");
 const eventValidator = require("../../validators/event");
 const { handleResponse } = require("../../utils/helper");
-
+const mongoose= require("mongoose");
+/*
 const createOrUpdateEvent = async (req, res) => {
   try {
     const { image_title, image_description, video_title, video_description } = req.body;
@@ -53,6 +54,96 @@ const createOrUpdateEvent = async (req, res) => {
       },
     });
 
+    await newEvent.save();
+
+    return res.status(201).json({
+      status: 201,
+      message: "Event created successfully!",
+      _id: newEvent._id,
+      banner: newEvent.banner,
+      event: {
+        imagesSection: newEvent.imagesSection,
+        videosSection: newEvent.videosSection,
+        created_at: newEvent.createdAt,
+        updated_at: newEvent.updatedAt,
+        __v: newEvent.__v,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      message: "Error creating event",
+      error: error.message,
+    });
+  }
+};
+*/
+
+const createOrUpdateEvent = async (req, res) => {
+  try {
+    const { image_title, image_description, video_title, video_description } = req.body;
+
+    // Upload Banner Image
+    const banner = req.files?.banner
+      ? await cloudinary.uploadImageToCloudinary(req.files.banner[0].buffer)
+      : null;
+
+    if (!banner) {
+      return res.status(400).json({ status: 400, message: "Banner image is required" });
+    }
+
+    // Upload Images
+    let imagesArray = [];
+    if (req.files?.images) {
+      for (let i = 0; i < req.files.images.length; i++) {
+        const file = req.files.images[i];
+        const title = req.body[`image${i + 1}_title`] || `Image ${i + 1}`;
+        const description = req.body[`image${i + 1}_description`] || "";
+
+        const imageUrl = await cloudinary.uploadImageToCloudinary(file.buffer);
+        imagesArray.push({
+          _id: new mongoose.Types.ObjectId(),
+          url: imageUrl,
+          title,
+          description,
+        });
+      }
+    }
+
+    // Upload Videos
+    let videoArray = [];
+    if (req.files?.videos) {
+      for (let i = 0; i < req.files.videos.length; i++) {
+        const file = req.files.videos[i];
+        const title = req.body[`video${i + 1}_title`] || `Video ${i + 1}`;
+        const description = req.body[`video${i + 1}_description`] || "";
+
+        const videoUrl = await cloudinary.uploadVideoToCloudinary(file.buffer);
+        videoArray.push({
+          _id: new mongoose.Types.ObjectId(),
+          url: videoUrl,
+          title,
+          description,
+        });
+      }
+    }
+
+    // Create Event Object
+    const newEvent = new Event({
+      banner,
+      imagesSection: {
+        image_title,
+        image_description,
+        images: imagesArray,
+      },
+      videosSection: {
+        video_title,
+        video_description,
+        videos: videoArray,
+      },
+    });
+
+    // Save Event to Database
     await newEvent.save();
 
     return res.status(201).json({
@@ -188,7 +279,7 @@ const deleteEvent = async (req, res) => {
     return handleResponse(res, 500, "Error deleting Event", { error: error.message });
   }
 };
-
+/*
 const updateImageSection = async (req, res) => {
   try {
     const { imageSectionId } = req.params;
@@ -236,7 +327,127 @@ const updateImageSection = async (req, res) => {
     return res.status(500).json({ status: 500, message: "Error updating image section", error: error.message });
   }
 };
+*/
 
+const updateImageSection = async (req, res) => {
+  try {
+    const { eventId } = req.params; // Event ID from request params
+    const { image_title, image_description, updated_images, remove_images } = req.body;
+
+    // 🔹 Step 1: Find the event
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ status: 404, message: "Event not found" });
+    }
+
+    // 🔹 Step 2: Validate imagesSection
+    if (!event.imagesSection || typeof event.imagesSection !== "object") {
+      return res.status(404).json({ status: 404, message: "Image section not found in event" });
+    }
+
+    // 🔹 Step 3: Update `image_title` and `image_description`
+    if (image_title !== undefined) event.imagesSection.image_title = image_title;
+    if (image_description !== undefined) event.imagesSection.image_description = image_description;
+
+    // 🔹 Step 4: Update specific images (title & description)
+    if (updated_images) {
+      let updatedImagesArray = [];
+      try {
+        updatedImagesArray = JSON.parse(updated_images); // Expecting a JSON array
+      } catch (error) {
+        return res.status(400).json({ status: 400, message: "Invalid updated_images format. Must be an array." });
+      }
+
+      updatedImagesArray.forEach((update) => {
+        const img = event.imagesSection.images.find((img) => img._id.toString() === update._id);
+        if (img) {
+          if (update.title) img.title = update.title;
+          if (update.description) img.description = update.description;
+        }
+      });
+    }
+
+    // 🔹 Step 5: Remove images if requested
+    let removeImagesArray = [];
+    if (remove_images) {
+      try {
+        removeImagesArray = JSON.parse(remove_images);
+      } catch (error) {
+        return res.status(400).json({ status: 400, message: "Invalid remove_images format. Must be an array." });
+      }
+    }
+
+    if (removeImagesArray.length > 0) {
+      event.imagesSection.images = event.imagesSection.images.filter(
+        (img) => !removeImagesArray.includes(img._id.toString())
+      );
+    }
+
+    // 🔹 Step 6: Upload new images if provided
+    if (req.files?.images) {
+      const uploadedImages = await Promise.all(
+        req.files.images.map(async (file, index) => {
+          const title = req.body[`image${index + 1}_title`] || "";
+          const description = req.body[`image${index + 1}_description`] || "";
+          const imageUrl = await cloudinary.uploadImageToCloudinary(file.buffer);
+          return { url: imageUrl, title, description, _id: new mongoose.Types.ObjectId() };
+        })
+      );
+      event.imagesSection.images.push(...uploadedImages);
+    }
+
+    // 🔹 Step 7: Save the event
+    await event.save();
+    return res.status(200).json({
+      status: 200,
+      message: "Image section updated successfully",
+      imagesSection: event.imagesSection,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      message: "Error updating image section",
+      error: error.message,
+    });
+  }
+};
+
+const updateVideoSection = async (req, res) => {
+  try {
+    const { eventId } = req.params; // Get event ID from URL params
+    const { video_title, video_description } = req.body; // Get new values from request body
+
+    // Find and update the event
+    const updatedEvent = await Event.findByIdAndUpdate(
+      eventId,
+      {
+        $set: {
+          "videosSection.video_title": video_title,
+          "videosSection.video_description": video_description,
+        },
+      },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedEvent) {
+      return res.status(404).json({ status: 404, message: "Event not found" });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: "Video section updated successfully!",
+      event: updatedEvent.videosSection,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      message: "Error updating video section",
+      error: error.message,
+    });
+  }
+};
+
+/*
 const updateVideoSection = async (req, res) => {
   try {
     const { videoSectionId } = req.params;
@@ -276,7 +487,7 @@ const updateVideoSection = async (req, res) => {
     return res.status(500).json({ status: 500, message: "Error updating video section", error: error.message });
   }
 };
-
+*/
 module.exports = {
   createOrUpdateEvent,
   getEvents,

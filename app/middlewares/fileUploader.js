@@ -21,9 +21,9 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }, 
 }).fields([
   { name: "images", maxCount: 10 }, 
+  { name: "detailImages", maxCount: 10 }, 
   { name: "videos", maxCount: 5 },  
-  { name: "banner", maxCount: 1 }
-  
+  { name: "banner", maxCount: 1 },
 ]);
 
 const convertImagesToWebP = async (req, res, next) => {
