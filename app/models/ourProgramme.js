@@ -13,19 +13,13 @@ const ourProgrammeSchema = new mongoose.Schema(
       'Special Support ourProgramme',
       'Special Interventions'
     ]},
-    banner: { type: String }, // Banner image URL
+    banner: { type: String }, 
 
     details: [
       {
         title: { type: String, trim: true },
         description: { type: String, trim: true },
-        images: [
-          {
-            images: { type: String }, // Image URL
-            title: { type: String, trim: true }, // Image Title
-            description: { type: String, trim: true } // Image Description
-          }
-        ]
+        images: [{ url: { type: String } }]
       }
     ]
   },

@@ -14,6 +14,7 @@ app.use(
       "http://localhost:3000",
       "http://localhost:3001",
       "http://192.168.0.131:3000",
+      "http://192.168.0.239:3000",
       "http://192.168.0.115:3000",
       "https://admin-atal-foundation.netlify.app",
       "https://atal-foundation.netlify.app"

@@ -4,11 +4,11 @@ const mongoose = require("mongoose");
 
 const eventSchema = new mongoose.Schema(
   {
-    banner: { type: String }, // Banner image URL
+    banner: { type: String }, 
 
     imagesSection: {
-      image_title: { type: String, trim: true }, // Common title for images
-      image_description: { type: String, trim: true }, // Common description for images
+      image_title: { type: String, trim: true }, 
+      image_description: { type: String, trim: true }, 
       // videos: [{ url: {type: String }} ],
       images: [
         {
@@ -23,7 +23,13 @@ const eventSchema = new mongoose.Schema(
     videosSection: {
       video_title: { type: String, trim: true }, // Common Video Title
       video_description: { type: String, trim: true }, // Common Video Description
-      videos: [{ type: String }] // Video URLs
+      // videos: [{ type: String }] // Video URLs
+      videos: [
+        {
+          _id: mongoose.Schema.Types.ObjectId,
+          url: String    
+        },
+      ],
     }
   },
   { timestamps: true }
