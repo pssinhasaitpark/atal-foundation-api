@@ -133,59 +133,166 @@ const getByCategory = async (req, res) => {
   }
 };
 
-const getourProgrammeById = async (req, res) => {
+// const getourProgrammeById = async (req, res) => {
+//   try {
+//     const ourProgramme = await ourProgramme.findById(req.params.id);
+//     if (!ourProgramme) {
+//       return handleResponse(res, 404, "ourProgramme not found");
+//     }
+//     return handleResponse(res, 200, "ourProgramme fetched successfully", {
+//       ourProgramme,
+//     });
+//   } catch (error) {
+//     return handleResponse(res, 500, "Error fetching ourProgramme", {
+//       error: error.message,
+//     });
+//   }
+// };
+
+const updateOurProgramme = async (req, res) => {
   try {
-    const ourProgramme = await ourProgramme.findById(req.params.id);
-    if (!ourProgramme) {
-      return handleResponse(res, 404, "ourProgramme not found");
-    }
-    return handleResponse(res, 200, "ourProgramme fetched successfully", {
-      ourProgramme,
-    });
-  } catch (error) {
-    return handleResponse(res, 500, "Error fetching ourProgramme", {
-      error: error.message,
-    });
-  }
-};
-/*
-const updateourProgramme = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { category, banner, details } = req.body;
+    const { category } = req.params;
+    let { details } = req.body;
 
-    const ourProgramme = await ourProgramme.findById(id);
-    if (!ourProgramme) {
-      return res
-        .status(404)
-        .json({ status: 404, message: "ourProgramme not found" });
+    // Log incoming request for debugging
+    console.log("Incoming Request Body:", JSON.stringify(req.body, null, 2));
+    console.log("Incoming Files:", req.files);
+
+    // Ensure details is parsed correctly
+    const parsedDetails = Array.isArray(details) ? details : JSON.parse(details || "[]");
+    console.log("Parsed Details:", parsedDetails);
+
+    // Find existing programme by category
+    const existingProgramme = await ourProgramme.findOne({ category });
+
+    if (!existingProgramme) {
+      return res.status(404).json({
+        status: 404,
+        message: "Our Programme not found",
+      });
     }
 
-    if (banner) {
-      const uploadedBanner = await cloudinary.uploadImageToCloudinary(
-        banner[0].buffer
-      );
-      ourProgramme.banner = uploadedBanner;
+    // Prevent category updates
+    if (req.body.category) {
+      return res.status(400).json({
+        status: 400,
+        message: "The category field is immutable and cannot be updated.",
+      });
     }
 
-    ourProgramme.category = category;
-    ourProgramme.details = details.map((detail) => ({
-      title: detail.title,
-      description: detail.description,
-      images: detail.images.map((image) => ({
-        url: image.url,
-        title: image.title,
-        description: image.description,
-      })),
-    }));
+    // Handle banner image update
+    let uploadedBannerUrl = existingProgramme.banner;
+    if (req.files?.banner) {
+      console.log("Uploading banner image...");
+      try {
+        uploadedBannerUrl = await cloudinary.uploadImageToCloudinary(req.files.banner[0].buffer);
+        console.log("Uploaded Banner:", uploadedBannerUrl);
+      } catch (error) {
+        console.error("Banner Upload Failed:", error);
+      }
+    }
 
-    await ourProgramme.save();
+    // Handle detail images
+    const detailImages = req.files?.detailImages || [];
+    console.log("Uploaded Detail Images:", detailImages);
+
+    if (parsedDetails && Array.isArray(parsedDetails)) {
+      for (let i = 0; i < parsedDetails.length; i++) {
+        const detail = parsedDetails[i];
+
+        if (detail._id) {
+          const index = existingProgramme.details.findIndex(
+            (d) => d._id.toString() === detail._id
+          );
+          if (index !== -1) {
+            existingProgramme.details[index].title = detail.title || existingProgramme.details[index].title;
+            existingProgramme.details[index].description = detail.description || existingProgramme.details[index].description;
+
+            console.log("Processing images for detail:", detail._id);
+
+            // Ensure images array exists
+            if (!existingProgramme.details[index].images) {
+              existingProgramme.details[index].images = [];
+            }
+
+            // Upload new detail images if available
+            let newDetailImages = [];
+            if (detailImages[i]) {
+              if (Array.isArray(detailImages[i])) {
+                newDetailImages = await Promise.all(
+                  detailImages[i].map(async (image) => {
+                    try {
+                      const url = await cloudinary.uploadImageToCloudinary(image.buffer);
+                      return { url };
+                    } catch (err) {
+                      console.error("Error uploading detail image:", err);
+                      return null;
+                    }
+                  })
+                );
+              } else if (detailImages[i].buffer) {
+                try {
+                  const url = await cloudinary.uploadImageToCloudinary(detailImages[i].buffer);
+                  newDetailImages.push({ url });
+                } catch (err) {
+                  console.error("Error uploading single detail image:", err);
+                }
+              }
+
+              // Remove null values and update details
+              newDetailImages = newDetailImages.filter((img) => img !== null);
+              existingProgramme.details[index].images = [
+                ...existingProgramme.details[index].images,
+                ...newDetailImages,
+              ];
+            }
+          }
+        } else {
+          // Add a new detail item
+          let newDetailImages = [];
+          if (detailImages[i]) {
+            if (Array.isArray(detailImages[i])) {
+              newDetailImages = await Promise.all(
+                detailImages[i].map(async (image) => {
+                  try {
+                    const url = await cloudinary.uploadImageToCloudinary(image.buffer);
+                    return { url };
+                  } catch (err) {
+                    console.error("Error uploading detail image:", err);
+                    return null;
+                  }
+                })
+              );
+            } else if (detailImages[i].buffer) {
+              try {
+                const url = await cloudinary.uploadImageToCloudinary(detailImages[i].buffer);
+                newDetailImages.push({ url });
+              } catch (err) {
+                console.error("Error uploading single detail image:", err);
+              }
+            }
+          }
+
+          const newDetail = {
+            title: detail.title,
+            description: detail.description,
+            images: newDetailImages.filter((img) => img !== null),
+          };
+          existingProgramme.details.push(newDetail);
+        }
+      }
+    }
+
+    existingProgramme.banner = uploadedBannerUrl;
+    await existingProgramme.save();
+
     return res.status(200).json({
       status: 200,
-      message: "ourProgramme updated successfully",
-      ourProgramme,
+      message: "Our Programme updated successfully",
+      ourProgramme: existingProgramme,
     });
   } catch (error) {
+    console.error("Error updating ourProgramme:", error);
     return res.status(500).json({
       status: 500,
       message: "Error updating ourProgramme",
@@ -193,221 +300,201 @@ const updateourProgramme = async (req, res) => {
     });
   }
 };
-*/
-/* title, description
-const updateOurProgramme = async (req, res) => {
+
+const updateOurProgrammeById = async (req, res) => {
   try {
-    const { category } = req.params; // Use category to identify the programme
-    const { banner, details } = req.body; // Destructure banner and details from the request body
+    const { category, detailId } = req.params;
+    const { title, description, removeImages } = req.body;
 
-    // Find the existing ourProgramme by category
-    const existingProgramme = await ourProgramme.findOne({ category });
+    console.log("Incoming Request Body:", JSON.stringify(req.body, null, 2));
+    console.log("Incoming Files:", req.files);
 
-    if (!existingProgramme) {
-      return handleResponse(res, 404, "Our Programme not found", {
-        message: "No programme found with the provided category.",
-      });
-    }
-
-    // If the category is provided in the request body, reject the update since category is immutable
-    if (req.body.category) {
-      return handleResponse(res, 400, "Category cannot be changed", {
-        message: "The category field is immutable and cannot be updated.",
-      });
-    }
-
-    // Handle the banner update if provided
-    let uploadedBannerUrl = existingProgramme.banner; // Keep existing banner if no new banner is uploaded
-    if (banner) {
-      // Upload the new banner image and get the URL
-      const uploadedBanner = await cloudinary.uploadImageToCloudinary(banner.buffer);
-      uploadedBannerUrl = uploadedBanner; // Set the new banner URL
-    }
-
-    // If details are provided, handle the changes
-    if (details && Array.isArray(details)) {
-      for (let detail of details) {
-        if (detail._id) {
-          // Update an existing detail (if _id is provided)
-          const index = existingProgramme.details.findIndex(
-            (d) => d._id.toString() === detail._id
-          );
-          if (index !== -1) {
-            existingProgramme.details[index].title = detail.title || existingProgramme.details[index].title;
-            existingProgramme.details[index].description = detail.description || existingProgramme.details[index].description;
-
-            // Handle image updates if provided in detail
-            if (detail.images && detail.images.length > 0) {
-              // Upload each new image provided for the detail
-              existingProgramme.details[index].images = await Promise.all(
-                detail.images.map(async (image) => {
-                  const uploadedImage = await cloudinary.uploadImageToCloudinary(image.buffer);
-                  return { url: uploadedImage }; // Return the image URL
-                })
-              );
-            }
-          }
-        } else {
-          // If no _id, it's a new detail item, so push it to the details array
-          const newDetail = {
-            title: detail.title,
-            description: detail.description,
-            images: detail.images ? await Promise.all(detail.images.map(async (image) => {
-              const uploadedImage = await cloudinary.uploadImageToCloudinary(image.buffer);
-              return { url: uploadedImage };
-            })) : [],
-          };
-          existingProgramme.details.push(newDetail); // Add the new detail to the programme
-        }
-      }
-    }
-
-    // Save the updated ourProgramme
-    existingProgramme.banner = uploadedBannerUrl; // Ensure the banner is updated
-    await existingProgramme.save();
-
-    return handleResponse(res, 200, "Our Programme updated successfully", {
-      ourProgramme: existingProgramme,
-    });
-  } catch (error) {
-    console.error("Error updating ourProgramme:", error);
-    return handleResponse(res, 500, "Error updating ourProgramme", {
-      error: error.message,
-    });
-  }
-};
-*/
-const updateOurProgramme = async (req, res) => {
-  try {
-    const { category } = req.params;
-    const { details } = req.body;
-
-    console.log("req.body:", req.body); // Log to check input data
+    // Parse removeImages safely (if provided as a JSON string)
+    const imagesToRemove = removeImages ? JSON.parse(removeImages) : [];
 
     // Find existing programme by category
     const existingProgramme = await ourProgramme.findOne({ category });
 
     if (!existingProgramme) {
-      return handleResponse(res, 404, "Our Programme not found", {
-        message: "No programme found with the provided category.",
+      return res.status(404).json({
+        status: 404,
+        message: "Our Programme not found",
       });
     }
 
-    // Reject update if category is being changed
-    if (req.body.category) {
-      return handleResponse(res, 400, "Category cannot be changed", {
-        message: "The category field is immutable and cannot be updated.",
+    // Find the specific details section
+    const detailIndex = existingProgramme.details.findIndex(
+      (d) => d._id.toString() === detailId
+    );
+
+    if (detailIndex === -1) {
+      return res.status(404).json({
+        status: 404,
+        message: "Detail section not found",
       });
     }
 
-    // Handle banner image update
-    let uploadedBannerUrl = existingProgramme.banner; // Keep existing banner if no new banner
-    if (req.body.banner) {  // Assuming banner is sent as base64 string
-      console.log("Uploading banner image...");
-      const bannerData = req.body.banner;  // Get the base64 string
+    const detailSection = existingProgramme.details[detailIndex];
 
-      // Upload to Cloudinary
-      uploadedBannerUrl = await cloudinary.uploadImageToCloudinary(bannerData); // Use the base64 string directly
-      console.log("Uploaded Banner:", uploadedBannerUrl);
+    // Update title and description if provided
+    if (title) detailSection.title = title;
+    if (description) detailSection.description = description;
+
+    // Remove images if requested
+    if (imagesToRemove.length > 0) {
+      detailSection.images = detailSection.images.filter(
+        (img) => !imagesToRemove.includes(img.url)
+      );
     }
 
-    // Handle details updates
-    if (details && Array.isArray(details)) {
-      for (let detail of details) {
-        if (detail._id) {
-          const index = existingProgramme.details.findIndex(
-            (d) => d._id.toString() === detail._id
-          );
-          if (index !== -1) {
-            existingProgramme.details[index].title = detail.title || existingProgramme.details[index].title;
-            existingProgramme.details[index].description = detail.description || existingProgramme.details[index].description;
+    // Handle new detail images upload
+    let newDetailImages = [];
+    if (req.files?.detailImages) {
+      const detailImages = req.files.detailImages;
 
-            console.log("Uploading images for detail:", detail._id);
-
-            // Handle images in `detailImages` (base64 or URL)
-            if (detail.detailImages && detail.detailImages.length > 0) {  // Handle `detailImages` instead of `images`
-              const newImages = await Promise.all(
-                detail.detailImages.map(async (image) => {
-                  console.log("Processing image:", image);
-                  if (image && image.url) {
-                    // If it's base64, upload it to Cloudinary
-                    if (image.url.startsWith('data:image')) {
-                      console.log("Base64 Image detected, uploading...");
-                      const uploadedImageUrl = await cloudinary.uploadImageToCloudinary(image.url);
-                      console.log("Uploaded Image URL:", uploadedImageUrl);
-                      return { url: uploadedImageUrl }; // Return image URL as JSON object
-                    }
-
-                    // If it's a URL, directly use it
-                    return { url: image.url }; // Directly return the URL if it's already hosted elsewhere
-                  } else {
-                    console.log("Image has no valid URL or base64 data:", image);
-                    return null; // Skip if no URL or base64
-                  }
-                })
-              ).then((results) => results.filter((image) => image !== null)); // Remove null results
-
-              console.log("New images uploaded:", newImages);
-
-              // Append new images to existing detail images
-              existingProgramme.details[index].detailImages = [ // Update `detailImages`
-                ...existingProgramme.details[index].detailImages,
-                ...newImages,
-              ];
+      if (Array.isArray(detailImages)) {
+        newDetailImages = await Promise.all(
+          detailImages.map(async (image) => {
+            try {
+              return { url: await cloudinary.uploadImageToCloudinary(image.buffer) };
+            } catch (err) {
+              console.error("Error uploading detail image:", err);
+              return null;
             }
-          }
-        } else {
-          // If no _id, it's a new detail item, so push it to the details array
-          const newDetail = {
-            title: detail.title,
-            description: detail.description,
-            detailImages: detail.detailImages ? await Promise.all(detail.detailImages.map(async (image) => { // Handle `detailImages` for new details
-              console.log("Uploading new detail image...");
-              if (image && image.url) {
-                if (image.url.startsWith('data:image')) {
-                  // If base64, upload it to Cloudinary
-                  const uploadedImageUrl = await cloudinary.uploadImageToCloudinary(image.url);
-                  console.log("Uploaded Image URL:", uploadedImageUrl);
-                  return { url: uploadedImageUrl }; // Return image URL as JSON object
-                } else {
-                  // If it's a URL, directly use it
-                  return { url: image.url }; // Return URL if already hosted
-                }
-              } else {
-                console.log("Image has no valid URL or base64 data:", image);
-                return null; // Skip if no valid data
-              }
-            })) : [],
-          };
-          // Add the new detail to the programme
-          existingProgramme.details.push(newDetail);
+          })
+        );
+      } else if (detailImages.buffer) {
+        try {
+          newDetailImages.push({ url: await cloudinary.uploadImageToCloudinary(detailImages.buffer) });
+        } catch (err) {
+          console.error("Error uploading single detail image:", err);
         }
       }
+
+      // Remove null values and append new images
+      newDetailImages = newDetailImages.filter((img) => img !== null);
+      detailSection.images = [...detailSection.images, ...newDetailImages];
     }
 
-    existingProgramme.banner = uploadedBannerUrl; // Ensure the banner is updated
+    // Save the updated programme
     await existingProgramme.save();
 
-    return handleResponse(res, 200, "Our Programme updated successfully", {
-      ourProgramme: existingProgramme,
+    return res.status(200).json({
+      status: 200,
+      message: "Detail section updated successfully",
+      updatedDetail: detailSection,
     });
   } catch (error) {
-    console.error("Error updating ourProgramme:", error);
-    return handleResponse(res, 500, "Error updating ourProgramme", {
+    console.error("Error updating detail section:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Error updating detail section",
       error: error.message,
     });
   }
 };
 
-const deleteourProgramme = async (req, res) => {
+const deleteOurProgrammeSectionByID = async (req, res) => {
   try {
-    const ourProgramme = await ourProgramme.findByIdAndDelete(req.params.id);
-    if (!ourProgramme) {
-      return handleResponse(res, 404, "ourProgramme not found");
+    const { category, detailId } = req.params;
+
+    console.log("Deleting Detail Section:", { category, detailId });
+
+    // Find existing programme by category
+    const existingProgramme = await ourProgramme.findOne({ category });
+
+    if (!existingProgramme) {
+      return res.status(404).json({
+        status: 404,
+        message: "Our Programme not found",
+      });
     }
-    return handleResponse(res, 200, "ourProgramme deleted successfully");
+
+    // Find index of the details section to delete
+    const detailIndex = existingProgramme.details.findIndex(
+      (d) => d._id.toString() === detailId
+    );
+
+    if (detailIndex === -1) {
+      return res.status(404).json({
+        status: 404,
+        message: "Detail section not found",
+      });
+    }
+
+    // Remove the detail section from the array
+    existingProgramme.details.splice(detailIndex, 1);
+
+    // Save the updated programme document
+    await existingProgramme.save();
+
+    return res.status(200).json({
+      status: 200,
+      message: "Detail section deleted successfully",
+    });
   } catch (error) {
-    return handleResponse(res, 500, "Error deleting ourProgramme", {
+    console.error("Error deleting detail section:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Error deleting detail section",
+      error: error.message,
+    });
+  }
+};
+
+const deleteOurProgrammeCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    console.log("Deleting Programme Category:", { categoryId });
+
+    // Find the category by ObjectId
+    const existingProgramme = await ourProgramme.findById(categoryId);
+
+    if (!existingProgramme) {
+      return res.status(404).json({
+        status: 404,
+        message: "Programme category not found",
+      });
+    }
+
+    // Remove banner image from Cloudinary if it exists
+    if (existingProgramme.banner) {
+      try {
+        await cloudinary.deleteImageFromCloudinary(existingProgramme.banner);
+        console.log("Deleted Banner Image:", existingProgramme.banner);
+      } catch (err) {
+        console.error("Error deleting banner image from Cloudinary:", err);
+      }
+    }
+
+    // Remove all detail images from Cloudinary
+    for (const detail of existingProgramme.details) {
+      if (detail.images && detail.images.length > 0) {
+        await Promise.all(
+          detail.images.map(async (image) => {
+            try {
+              await cloudinary.deleteImageFromCloudinary(image.url);
+            } catch (err) {
+              console.error("Error deleting detail image from Cloudinary:", err);
+            }
+          })
+        );
+      }
+    }
+
+    // Delete the category from the database
+    await ourProgramme.findByIdAndDelete(categoryId);
+
+    return res.status(200).json({
+      status: 200,
+      message: "Programme category deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting programme category:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Error deleting programme category",
       error: error.message,
     });
   }
@@ -417,7 +504,9 @@ module.exports = {
   createOurProgramme,
   getourProgrammes,
   getByCategory,
-  getourProgrammeById,
+  // getourProgrammeById,
   updateOurProgramme,
-  deleteourProgramme,
+  updateOurProgrammeById,
+  deleteOurProgrammeSectionByID,
+  deleteOurProgrammeCategory
 };

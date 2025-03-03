@@ -10,7 +10,7 @@ const sendEmail = require('../../utils/emailHandler')
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
-
+const mongoose = require('mongoose');
 exports.registerUser = async (req, res) => {
   const { error } = userRegistrationSchema.validate(req.body);
   if (error) {
@@ -162,23 +162,30 @@ exports.registerForm = async (req, res) => {
   }
 
   const { first_name, last_name, email, mobile, address, gender, date_of_birth, city, state, category, designation, message } = req.body;
-  let imageUrls = [];
-  if (req.files && req.files.length > 0) {
-    const uploadPromises = req.files.map((file) =>
-      cloudinary.uploadImageToCloudinary(file.buffer)
-    );
-    imageUrls = await Promise.all(uploadPromises);
-  }
 
   try {
-    const existingUser = await Users.findOne({ email });
+    console.log("Uploaded Files:", req.files);
+    let imageUrls = [];
 
-    if (!existingUser) {
-      return handleResponse(res, 400, "User not found. Please register first.");
+    if (req.files && req.files.images) {
+      for (const file of req.files.images) {
+        try {
+          const uploadedImage = await cloudinary.uploadImageToCloudinary(file.buffer);
+          console.log("Cloudinary Upload Response:", uploadedImage);
+          if (uploadedImage) {
+            imageUrls.push(uploadedImage);
+          }
+        } catch (uploadError) {
+          console.error("Cloudinary Upload Failed:", uploadError);
+        }
+      }
     }
 
     const data = {
-      user_id: existingUser._id,  
+      first_name,
+      last_name,
+      email,
+      mobile,
       address,
       gender,
       date_of_birth,
@@ -187,17 +194,30 @@ exports.registerForm = async (req, res) => {
       category,
       designation,
       message,
-      images: imageUrls,  
+      images: imageUrls,
       user_role: "user",
+      user_id: new mongoose.Types.ObjectId(),
     };
+
+    console.log("Final Image URLs:", imageUrls);
 
     const newUserForm = new UserForm(data);
     await newUserForm.save();
 
-    return handleResponse(res, 201, "User Registration Form Successfully Submitted!", { first_name, last_name, email, mobile, address, gender, date_of_birth, city, state, category, designation, message, images: imageUrls });
+    return handleResponse(res, 201, "User Registration Form Successfully Submitted!", data);
   } catch (error) {
-    console.error(error);
+    console.error("Form Submission Error:", error);
     return handleResponse(res, 500, "An error occurred while submitting the form.", { error: error.message });
+  }
+};
+
+exports.getAllRegitations = async (req, res) => {
+  try {
+    const users = await UserForm.find();
+    return handleResponse(res, 200, "All Registered Users Fetched Successfully", users);
+  } catch (error) {
+    console.error("Fetch Users Error:", error);
+    return handleResponse(res, 500, "An error occurred while fetching users.", { error: error.message });
   }
 };
 

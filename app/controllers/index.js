@@ -10,5 +10,7 @@ module.exports = {
     subscribers: require("./subscribers/subscribers"),
     about: require("./about/about"),
     socialMedia: require("./socialMedia/socialMedia"),
-    ourProgramme: require("./ourProgramme/ourProgramme")
+    ourProgramme: require("./ourProgramme/ourProgramme"),
+    eventVideo: require("./eventVideo/eventVideo"),
+    news: require("./news/news")
 }
