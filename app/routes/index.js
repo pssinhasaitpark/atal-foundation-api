@@ -10,6 +10,8 @@ const subscribeRoutes= require("./subscribe");
 const aboutRoutes= require("./about");
 const socialMediaRoutes= require("./socialMedia");
 const ourProgrammeRoutes= require("./ourProgramme");
+const eventVideoRoutes= require("./eventVideo");
+const newsRoutes= require("./news")
 
 module.exports = (app) => {
   app.use("/api", userRoutes);
@@ -24,4 +26,6 @@ module.exports = (app) => {
   app.use("/api/about", aboutRoutes);
   app.use("/api/social-media", socialMediaRoutes);
   app.use("/api/our-programme", ourProgrammeRoutes);
+  app.use("/api/event-videos", eventVideoRoutes);
+  app.use("/api/news", newsRoutes);
 };

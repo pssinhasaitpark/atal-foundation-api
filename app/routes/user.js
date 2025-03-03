@@ -12,9 +12,10 @@ router.post("/register", users.registerUser);
 router.post("/login", users.loginUser);
 router.get("/me", verifyUser, users.me);
 router.patch("/update", verifyUser, users.updateUser);
-router.post('/register-form', upload,convertImagesToWebP, registerForm);
+router.post('/register-form', upload, convertImagesToWebP, registerForm);
 router.post("/forgot-password", users.forgotPassword);
 router.post("/reset-password", users.resetPassword); 
+router.get("/users", users.getAllRegitations);
 
 module.exports = router;
  

@@ -17,8 +17,9 @@ const fileFilter = (req, file, cb) => {
 
 
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, 
+  storage,
+      // fileFilter,
+      limits: { fieldSize: 50 * 1024 * 1024 }
 }).fields([
   { name: "images", maxCount: 10 }, 
   { name: "detailImages", maxCount: 10 }, 
@@ -84,7 +85,6 @@ const convertImagesToWebPMultiple = async (req, res, next) => {
 };
 
 
-
 module.exports = { upload, convertImagesToWebP ,convertImagesToWebPMultiple};
 
 
@@ -93,6 +93,7 @@ module.exports = { upload, convertImagesToWebP ,convertImagesToWebPMultiple};
 //     fileFilter,
 //     limits: { fieldSize: 50 * 1024 * 1024 }
 // }).array("images", 10);
+
 
 // const upload = multer({
 //   storage,

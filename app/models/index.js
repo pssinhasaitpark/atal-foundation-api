@@ -10,6 +10,8 @@ const Subscribers= require("./subscribers")
 const About= require("./about")
 const SocialMedia= require("./socialMedia")
 const ourProgramme= require("./ourProgramme")
+const eventVideo= require("./eventVideo")
+const news= require("./news")
 module.exports = {
     Users,
     Vision, 
@@ -22,5 +24,7 @@ module.exports = {
     Subscribers,
     About,
     SocialMedia,
-    ourProgramme
+    ourProgramme,
+    eventVideo,
+    news
 }
