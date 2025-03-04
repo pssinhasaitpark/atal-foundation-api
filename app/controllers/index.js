@@ -12,5 +12,6 @@ module.exports = {
     socialMedia: require("./socialMedia/socialMedia"),
     ourProgramme: require("./ourProgramme/ourProgramme"),
     eventVideo: require("./eventVideo/eventVideo"),
-    news: require("./news/news")
+    news: require("./news/news"),
+    homePage: require("./homePage/homePage")
 }

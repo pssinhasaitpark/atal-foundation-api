@@ -2,118 +2,6 @@ const About = require("../../models/about");
 const sharp = require('sharp');
 const cloudinary = require("cloudinary").v2;
 const mongoose = require("mongoose");
-/*
-const createAboutSection = async (req, res) => {
-  try {
-    let removeImages = [];
-    if (req.body.removeImages) {
-      try {
-        removeImages = JSON.parse(req.body.removeImages);
-      } catch (error) {
-        return res.status(400).json({ error: "Invalid removeImages format. Must be a JSON array." });
-      }
-    }
-
-    const bannerImage = req.files.banner ? req.files.banner[0] : null;
-    const images = req.files.images || [];
-
-
-    const uploadBannerImage = bannerImage
-      ? new Promise((resolve, reject) => {
-          sharp(bannerImage.buffer)
-            .webp()
-            .toBuffer()
-            .then((webpBuffer) => {
-              cloudinary.uploader.upload_stream(
-                { resource_type: "image" },
-                (error, result) => {
-                  if (error) {
-                    reject(error);
-                  } else {
-                    resolve(result.secure_url);
-                  }
-                }
-              ).end(webpBuffer);
-            })
-            .catch((error) => {
-              reject(error);
-            });
-        })
-      : Promise.resolve("");
-
-    const uploadImages = images.map((image) =>
-      new Promise((resolve, reject) => {
-        sharp(image.buffer)
-          .webp()
-          .toBuffer()
-          .then((webpBuffer) => {
-            cloudinary.uploader.upload_stream(
-              { resource_type: "image" },
-              (error, result) => {
-                if (error) {
-                  reject(error);
-                } else {
-                  resolve(result.secure_url);
-                }
-              }
-            ).end(webpBuffer);
-          })
-          .catch((error) => {
-            reject(error);
-          });
-      })
-    );
-
-
-    const uploadResults = await Promise.allSettled([
-      uploadBannerImage,
-      ...uploadImages
-    ]);
-
-    const bannerUrl = uploadResults[0].status === 'fulfilled' ? uploadResults[0].value : '';
-    const imageUrls = uploadResults.slice(1).map(result => result.status === 'fulfilled' ? result.value : '');
-
-
-    const sectionsData = req.body.data.map((section, index) => {
-      return {
-        title: section.title,
-        description: section.description,
-        image: imageUrls[index] || imageUrls[0] || "",
-      };
-      return null; 
-    }).filter(section => section !== null); 
-    
-
-    if (removeImages.length > 0) {
-      sectionsData.forEach((section) => {
-        if (removeImages.includes(section.image)) {
-          section.image = "";
-        }
-      });
-    }
-
-    const existingAbout = await About.findOne({}); 
-
-    if (existingAbout) {
-      existingAbout.sections.push(...sectionsData);
-      if (bannerUrl) {
-        existingAbout.banner = bannerUrl; 
-      }
-      await existingAbout.save(); 
-      return res.status(200).json({ message: "About section updated successfully!", existingAbout });
-    } else {
-      const newAbout = new About({
-        banner: bannerUrl,
-        sections: sectionsData,
-      });
-      await newAbout.save();
-      return res.status(201).json({ message: "About section created successfully!", newAbout });
-    }
-  } catch (error) {
-    res.status(500).json({ error: "An error occurred while creating or updating the About section." });
-  }
-};
-*/
 
 const createAboutSection = async (req, res) => {
   try {
@@ -122,7 +10,7 @@ const createAboutSection = async (req, res) => {
       try {
         removeImages = JSON.parse(req.body.removeImages);
       } catch (error) {
-        return res.status(400).json({ error: "Invalid removeImages format. Must be a JSON array." });
+        return handleResponse(res, 400, "Invalid removeImages format. Must be a JSON array.");      
       }
     }
 
@@ -186,7 +74,7 @@ const createAboutSection = async (req, res) => {
       }
 
       await existingAbout.save();
-      return res.status(200).json({ message: "Banner updated successfully!", existingAbout });
+      return handleResponse(res, 200, "Banner updated successfully!", { existingAbout });
     }
 
     const sectionsData = (req.body.data || []).map((section, index) => ({
@@ -209,7 +97,7 @@ const createAboutSection = async (req, res) => {
         existingAbout.banner = bannerUrl;
       }
       await existingAbout.save();
-      return res.status(200).json({ message: "About section updated successfully!", existingAbout });
+      return handleResponse(res, 200, "About section updated successfully!", { existingAbout });
     } else {
       const newAbout = new About({
         banner: bannerUrl,

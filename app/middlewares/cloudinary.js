@@ -71,6 +71,8 @@ const upload = multer({
   { name: "videos", maxCount: 5 },
   { name: "banner", maxCount: 1 },
   { name: "detailImages", maxCount: 10 },
+  { name: "image1", maxCount: 5},
+  { name: "image2", maxCount: 5},
 ]);
 
 // 🔹 Convert Images to WebP
@@ -134,4 +136,12 @@ const uploadVideoToCloudinary = (fileBuffer) => {
   });
 };
 
-module.exports = { cloudinary, uploadImageToCloudinary, uploadVideoToCloudinary,convertImagesToWebP ,upload};
+// 🔹 Upload multiple images to Cloudinary
+const uploadImagesToCloudinary = async (files) => {
+  if (!files || files.length === 0) return [];
+
+  return await Promise.all(
+    files.map(file => uploadImageToCloudinary(file.buffer))
+  );
+};
+module.exports = { cloudinary, uploadImageToCloudinary, uploadVideoToCloudinary,convertImagesToWebP ,upload, uploadImagesToCloudinary};
