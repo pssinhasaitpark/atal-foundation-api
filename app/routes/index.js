@@ -12,6 +12,7 @@ const socialMediaRoutes= require("./socialMedia");
 const ourProgrammeRoutes= require("./ourProgramme");
 const eventVideoRoutes= require("./eventVideo");
 const newsRoutes= require("./news")
+const homePageRoutes= require("./homePage")
 
 module.exports = (app) => {
   app.use("/api", userRoutes);
@@ -28,4 +29,5 @@ module.exports = (app) => {
   app.use("/api/our-programme", ourProgrammeRoutes);
   app.use("/api/event-videos", eventVideoRoutes);
   app.use("/api/news", newsRoutes);
+  app.use("/api/homePage", homePageRoutes)
 };

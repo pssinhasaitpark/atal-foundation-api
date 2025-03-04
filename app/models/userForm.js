@@ -6,6 +6,10 @@ const userFormSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  first_name: String,
+  last_name: String,
+  email: String,
+  mobile: String,
   address: {
     type: String,
   },

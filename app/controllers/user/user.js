@@ -189,7 +189,7 @@ exports.registerForm = async (req, res) => {
       address,
       gender,
       date_of_birth,
-      city,
+      // city,
       state,
       category,
       designation,

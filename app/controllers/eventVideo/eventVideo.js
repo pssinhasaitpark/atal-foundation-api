@@ -4,32 +4,34 @@ const { handleResponse } = require("../../utils/helper");
 
 exports.createEventVideo = async (req, res) => {
   try {
-
     const { video_title, video_description } = req.body;
 
-    if (req.files) {
+    if (!req.files || !req.files.videos) {
+      return handleResponse(res, 400, 'No videos uploaded');
+    }
 
-      const videoFiles = Array.isArray(req.files.videos) ? req.files.videos : [req.files.videos];
+    const videoFiles = Array.isArray(req.files.videos) ? req.files.videos : [req.files.videos];
 
-      const videoUrls = [];
+    const videoUrls = [];
 
-      for (const file of videoFiles) {
-        const videoUrl = await uploadVideoToCloudinary(file.buffer); 
-        videoUrls.push(videoUrl);
+    for (const file of videoFiles) {
+      if (!file.buffer) {
+        return handleResponse(res, 400, 'File buffer is missing');
       }
 
-      const newEventVideo = new EventVideo({
-        video_title,
-        video_description,
-        videos: videoUrls, 
-      });
-
-      await newEventVideo.save();
-
-      return handleResponse(res, 201, 'Event video created successfully', { newEventVideo });
-    } else {
-      return handleResponse(res, 400, 'No files uploaded');
+      const videoUrl = await uploadVideoToCloudinary(file.buffer); 
+      videoUrls.push(videoUrl);
     }
+
+    const newEventVideo = new EventVideo({
+      video_title,
+      video_description,
+      videos: videoUrls, 
+    });
+
+    await newEventVideo.save();
+
+    return handleResponse(res, 201, 'Event video created successfully', { newEventVideo });
   } catch (error) {
     console.error(error);  
     return handleResponse(res, 500, error.message);
