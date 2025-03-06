@@ -31,14 +31,31 @@ exports.createNews = async (req, res) => {
     }
 };
 
+// exports.getAllNews = async (req, res) => {
+//     try {
+//         const allNews = await News.find();
+
+//         if (allNews.length === 0) {
+//             return handleResponse(res, 404, 'No news found');
+//         }
+
+//         handleResponse(res, 200, 'All news fetched successfully', { allNews });
+//     } catch (error) {
+//         handleResponse(res, 500, error.message);
+//     }
+// };
+
 exports.getAllNews = async (req, res) => {
     try {
         const allNews = await News.find();
 
         if (allNews.length === 0) {
-            return handleResponse(res, 404, 'No news found');
+            // Send a 200 OK response with a message saying "empty"
+            // return res.status(204).json({ message: 'empty' });
+            return handleResponse(res, 204, 'No news found');
         }
 
+        // Send 200 OK with the actual news data
         handleResponse(res, 200, 'All news fetched successfully', { allNews });
     } catch (error) {
         handleResponse(res, 500, error.message);
@@ -60,7 +77,7 @@ exports.getNewsById = async (req, res) => {
         handleResponse(res, 500, error.message);
     }
 };
-
+/*
 exports.updateNewsById = async (req, res) => {
     try {
         const newsId = req.params.id;
@@ -101,6 +118,47 @@ exports.updateNewsById = async (req, res) => {
             });
         }
 
+        await newsSection.save();
+
+        handleResponse(res, 200, 'News section updated successfully', { newsSection });
+    } catch (error) {
+        handleResponse(res, 500, error.message);
+    }
+};
+*/
+
+exports.updateNewsById = async (req, res) => {
+    try {
+        const newsId = req.params.id;
+        const { headline, description } = req.body;  // No need for removeImages
+
+        const newsSection = await News.findById(newsId);
+        if (!newsSection) {
+            return handleResponse(res, 404, 'News section not found');
+        }
+
+        // Update headline and description if provided
+        if (headline) {
+            newsSection.headline = headline;
+        }
+
+        if (description) {
+            newsSection.description = description;
+        }
+
+        // If new images are uploaded, replace the existing ones
+        if (req.files && req.files.images && req.files.images.length > 0) {
+            const imagesUrls = [];
+            for (const file of req.files.images) {
+                const uploadedImageUrl = await uploadImageToCloudinary(file.buffer);
+                imagesUrls.push(uploadedImageUrl);
+            }
+
+            // Replace existing images with the new ones
+            newsSection.images = imagesUrls;
+        }
+
+        // Save the updated news section
         await newsSection.save();
 
         handleResponse(res, 200, 'News section updated successfully', { newsSection });
