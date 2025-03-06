@@ -2,15 +2,15 @@ const mongoose = require("mongoose");
 
 const socialMediaSchema = new mongoose.Schema(
   {
-    whatsapp: { icon: String, link: String },
-    facebook: { icon: String, link: String },
-    instagram: { icon: String, link: String },
-    youtube: { icon: String, link: String },
-    linkedIn: { icon: String, link: String },
-    snapchat: { icon: String, link: String },
-    thread: { icon: String, link: String },
-    pinterest: { icon: String, link: String },
-    x: { icon: String, link: String }
+    whatsapp: { link: String },
+    facebook: { link: String },
+    instagram: { link: String },
+    youtube: { link: String },
+    linkedIn: { link: String },
+    snapchat: { link: String },
+    thread: { link: String },
+    pinterest: { link: String },
+    x: { link: String }
   },
   { timestamps: true }
 );
