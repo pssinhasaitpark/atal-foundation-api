@@ -98,9 +98,29 @@ const createOurProgramme = async (req, res) => {
 
 const getourProgrammes = async (req, res) => {
   try {
+    // Define the predefined category order
+    const categoryOrder = [
+      'Education',
+      'Healthcare',
+      'Livelihood',
+      'Girl Child & Women Empowerment',
+      'Privileged Children',
+      'Civic Driven Change',
+      'Social Entrepreneurship',
+      'Special Support ourProgramme',
+      'Special Interventions'
+    ];
+
+    // Fetch the programmes and sort them based on the categoryOrder
     const ourProgrammes = await ourProgramme.find().sort({ createdAt: -1 });
+
+    // Sort the programmes according to the predefined category order
+    const sortedProgrammes = ourProgrammes.sort((a, b) => {
+      return categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category);
+    });
+
     return handleResponse(res, 200, "ourProgrammes fetched successfully", {
-      ourProgrammes,
+      ourProgrammes: sortedProgrammes,
     });
   } catch (error) {
     return handleResponse(res, 500, "Error fetching ourProgrammes", {
@@ -133,36 +153,17 @@ const getByCategory = async (req, res) => {
   }
 };
 
-// const getourProgrammeById = async (req, res) => {
-//   try {
-//     const ourProgramme = await ourProgramme.findById(req.params.id);
-//     if (!ourProgramme) {
-//       return handleResponse(res, 404, "ourProgramme not found");
-//     }
-//     return handleResponse(res, 200, "ourProgramme fetched successfully", {
-//       ourProgramme,
-//     });
-//   } catch (error) {
-//     return handleResponse(res, 500, "Error fetching ourProgramme", {
-//       error: error.message,
-//     });
-//   }
-// };
-
 const updateOurProgramme = async (req, res) => {
   try {
     const { category } = req.params;
     let { details } = req.body;
 
-    // Log incoming request for debugging
     console.log("Incoming Request Body:", JSON.stringify(req.body, null, 2));
     console.log("Incoming Files:", req.files);
 
-    // Ensure details is parsed correctly
     const parsedDetails = Array.isArray(details) ? details : JSON.parse(details || "[]");
     console.log("Parsed Details:", parsedDetails);
 
-    // Find existing programme by category
     const existingProgramme = await ourProgramme.findOne({ category });
 
     if (!existingProgramme) {
@@ -172,7 +173,6 @@ const updateOurProgramme = async (req, res) => {
       });
     }
 
-    // Prevent category updates
     if (req.body.category) {
       return res.status(400).json({
         status: 400,
@@ -180,7 +180,6 @@ const updateOurProgramme = async (req, res) => {
       });
     }
 
-    // Handle banner image update
     let uploadedBannerUrl = existingProgramme.banner;
     if (req.files?.banner) {
       console.log("Uploading banner image...");
@@ -192,7 +191,6 @@ const updateOurProgramme = async (req, res) => {
       }
     }
 
-    // Handle detail images
     const detailImages = req.files?.detailImages || [];
     console.log("Uploaded Detail Images:", detailImages);
 
@@ -210,12 +208,10 @@ const updateOurProgramme = async (req, res) => {
 
             console.log("Processing images for detail:", detail._id);
 
-            // Ensure images array exists
             if (!existingProgramme.details[index].images) {
               existingProgramme.details[index].images = [];
             }
 
-            // Upload new detail images if available
             let newDetailImages = [];
             if (detailImages[i]) {
               if (Array.isArray(detailImages[i])) {
@@ -239,7 +235,6 @@ const updateOurProgramme = async (req, res) => {
                 }
               }
 
-              // Remove null values and update details
               newDetailImages = newDetailImages.filter((img) => img !== null);
               existingProgramme.details[index].images = [
                 ...existingProgramme.details[index].images,
@@ -248,7 +243,6 @@ const updateOurProgramme = async (req, res) => {
             }
           }
         } else {
-          // Add a new detail item
           let newDetailImages = [];
           if (detailImages[i]) {
             if (Array.isArray(detailImages[i])) {
@@ -504,7 +498,6 @@ module.exports = {
   createOurProgramme,
   getourProgrammes,
   getByCategory,
-  // getourProgrammeById,
   updateOurProgramme,
   updateOurProgrammeById,
   deleteOurProgrammeSectionByID,

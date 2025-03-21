@@ -135,62 +135,6 @@ const getAboutSection = async (req, res) => {
     res.status(500).json({ error: "An error occurred while fetching About section." });
   }
 };
-/*
-const updateAboutSection = async (req, res) => {
-    try {
-        const { aboutId, sectionId } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(aboutId) || !mongoose.Types.ObjectId.isValid(sectionId)) {
-            return res.status(400).json({ message: "Invalid ID format." });
-        }
-
-        const about = await About.findById(aboutId);
-        if (!about) {
-            return res.status(404).json({ message: "About section not found." });
-        }
-
-        const section = about.sections.id(sectionId);
-        if (!section) {
-            return res.status(404).json({ message: "Section not found." });
-        }
-        let uploadedImageUrls = [];
-        if (req.files?.image) {
-            const imageFiles = Array.isArray(req.files.image) ? req.files.image : [req.files.image];
-
-            for (const imageFile of imageFiles) {
-                const imageBuffer = await sharp(imageFile.buffer).webp().toBuffer();
-
-                const uploadedImageUrl = await new Promise((resolve, reject) => {
-                    const stream = cloudinary.uploader.upload_stream({ resource_type: "image" }, (error, result) => {
-                        if (error) reject(error);
-                        else resolve(result.secure_url);
-                    });
-                    stream.end(imageBuffer);
-                });
-
-                uploadedImageUrls.push(uploadedImageUrl);
-            }
-        }
-        console.log("DSWGYJUY---------", uploadedImageUrls)
-        section.set({
-            title: req.body.title || section.title,
-            description: req.body.description || section.description,
-            images: uploadedImageUrls.length > 0 ? uploadedImageUrls : section.images, 
-        });
-        
-
-
-        await about.save();
-
-        res.status(200).json({
-            message: "Section updated successfully!",
-            updatedSection: section,
-        });
-    } catch (error) {
-        res.status(500).json({ error: "An error occurred while updating the section." });
-    }
-};
-*/
 
 const updateAboutSection = async (req, res) => {
   try {

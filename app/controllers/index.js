@@ -13,5 +13,7 @@ module.exports = {
     ourProgramme: require("./ourProgramme/ourProgramme"),
     eventVideo: require("./eventVideo/eventVideo"),
     news: require("./news/news"),
-    homePage: require("./homePage/homePage")
+    homePage: require("./homePage/homePage"),
+    supportSpeaker: require("./supportSpeaker/supportSpeaker"),
+    audioQuote: require("./audioQuote/audioQuote")
 }

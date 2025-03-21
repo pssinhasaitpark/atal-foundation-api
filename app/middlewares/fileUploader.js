@@ -84,8 +84,22 @@ const convertImagesToWebPMultiple = async (req, res, next) => {
   }
 };
 
+const audiofileFilter = (req, file, cb) => {
+  const allowedTypes = ["audio/mp3", "audio/wav"];
+  if (!allowedTypes.includes(file.mimetype)) {
+    return cb(new Error("Invalid file type. Only MP3 and WAV are allowed."), false);
+  }
+  cb(null, true);
+};
 
-module.exports = { upload, convertImagesToWebP ,convertImagesToWebPMultiple};
+// Create the multer upload middleware for audio files
+const uploadAudio = multer({
+  storage,
+  audiofileFilter,
+  limits: { fileSize: 50 * 1024 * 1024 }, // Set file size limit to 50 MB
+}).single("audio"); // Expect the audio file to be uploaded under the "audio" field
+
+module.exports = { upload, convertImagesToWebP ,convertImagesToWebPMultiple, uploadAudio};
 
 
 // const upload =   multer({

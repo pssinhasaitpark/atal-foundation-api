@@ -130,7 +130,6 @@ const verifyRole = (req, res) => {
   );
 };
 
-
 const verifyAdmin = (req, res, next) => {
   const { user_role } = req.user; 
 
