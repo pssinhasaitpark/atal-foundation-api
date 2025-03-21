@@ -1,11 +1,11 @@
 const jwt = require("jsonwebtoken");
-const {userRegistrationSchema,userLoginSchema, userRegistrationFormSchema} = require("../vailidators/usersValidaters");
+const { userRegistrationSchema, userLoginSchema, userRegistrationFormSchema } = require("../vailidators/usersValidaters");
 const { errorResponse, successResponse } = require("../../utils/helper");
 const { Users } = require("../../models");
 const UserForm = require("../../models/userForm");
 const { jwtAuthentication } = require("../../middlewares");
 const cloudinary = require("../../middlewares/cloudinary");
-const {handleResponse}= require('../../utils/helper')
+const { handleResponse } = require('../../utils/helper')
 const sendEmail = require('../../utils/emailHandler')
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
@@ -94,7 +94,7 @@ exports.loginUser = async (req, res) => {
       return successResponse(
         res,
         `Admin Login successfully!`,
-        { encryptedToken , user_role: "admin"},
+        { encryptedToken, user_role: "admin" },
         200
       );
     }
@@ -102,7 +102,7 @@ exports.loginUser = async (req, res) => {
     return successResponse(
       res,
       `User Login successfully!`,
-      { encryptedToken , user_role: "user"},
+      { encryptedToken, user_role: "user" },
       200
     );
   } catch (error) {
@@ -154,8 +154,8 @@ exports.updateUser = async (req, res) => {
     return handleResponse(res, 500, "An error occurred while updating the user.", { error: error.message });
   }
 };
-
-exports.registerForm = async (req, res) => {
+/*
+exports.registerForm = async (req, res, next) => {
   const { error } = userRegistrationFormSchema.validate(req.body);
   if (error) {
     return handleResponse(res, 400, error.details[0].message);
@@ -164,19 +164,16 @@ exports.registerForm = async (req, res) => {
   const { first_name, last_name, email, mobile, address, gender, date_of_birth, city, state, category, designation, message } = req.body;
 
   try {
-    console.log("Uploaded Files:", req.files);
     let imageUrls = [];
 
     if (req.files && req.files.images) {
       for (const file of req.files.images) {
         try {
           const uploadedImage = await cloudinary.uploadImageToCloudinary(file.buffer);
-          console.log("Cloudinary Upload Response:", uploadedImage);
           if (uploadedImage) {
             imageUrls.push(uploadedImage);
           }
         } catch (uploadError) {
-          console.error("Cloudinary Upload Failed:", uploadError);
         }
       }
     }
@@ -189,7 +186,7 @@ exports.registerForm = async (req, res) => {
       address,
       gender,
       date_of_birth,
-      // city,
+      city,
       state,
       category,
       designation,
@@ -199,7 +196,6 @@ exports.registerForm = async (req, res) => {
       user_id: new mongoose.Types.ObjectId(),
     };
 
-    console.log("Final Image URLs:", imageUrls);
 
     const newUserForm = new UserForm(data);
     await newUserForm.save();
@@ -210,7 +206,87 @@ exports.registerForm = async (req, res) => {
     return handleResponse(res, 500, "An error occurred while submitting the form.", { error: error.message });
   }
 };
+*/
 
+exports.registerForm = async (req, res, next) => {
+  const { error } = userRegistrationFormSchema.validate(req.body);
+  if (error) {
+    return handleResponse(res, 400, error.details[0].message);
+  }
+
+  const {
+    first_name,
+    last_name,
+    email,
+    mobile,
+    address,
+    gender,
+    date_of_birth,
+    city,
+    state,
+    category,
+    designation,
+    message,
+  } = req.body;
+
+  try {
+    let imageUrls = [];
+
+    if (req.files && req.files.images) {
+      for (const file of req.files.images) {
+        try {
+          const uploadedImage = await cloudinary.uploadImageToCloudinary(file.buffer);
+          if (uploadedImage) {
+            imageUrls.push(uploadedImage);
+          }
+        } catch (uploadError) {
+          console.error("Image Upload Error:", uploadError);
+        }
+      }
+    }
+
+    const newRegistration = {
+      first_name,
+      last_name,
+      email,
+      mobile,
+      address,
+      gender,
+      date_of_birth,
+      city,
+      state,
+      category,
+      designation,
+      message,
+      images: imageUrls,
+      user_role: "user",
+      user_id: new mongoose.Types.ObjectId(),
+    };
+
+    // Check if a registrations document already exists
+    let registrationDoc = await UserForm.findOne();
+
+    if (!registrationDoc) {
+      // Create a new document if none exists
+      registrationDoc = new UserForm({
+        registrations: [newRegistration],
+      });
+    } else {
+      // Append to the existing registrations array
+      registrationDoc.registrations.push(newRegistration);
+    }
+
+    await registrationDoc.save();
+
+    return handleResponse(res, 201, "User Registration Form Successfully Submitted!", { registration: newRegistration });
+  } catch (error) {
+    console.error("Form Submission Error:", error);
+    return handleResponse(res, 500, "An error occurred while submitting the form.", { error: error.message });
+  }
+};
+
+
+/*
 exports.getAllRegitations = async (req, res) => {
   try {
     const users = await UserForm.find();
@@ -220,6 +296,25 @@ exports.getAllRegitations = async (req, res) => {
     return handleResponse(res, 500, "An error occurred while fetching users.", { error: error.message });
   }
 };
+*/
+
+exports.getAllRegitations = async (req, res) => {
+  try {
+    const registrationDoc = await UserForm.findOne();
+    if (!registrationDoc || registrationDoc.registrations.length === 0) {
+      return handleResponse(res, 404, "No Registered Users Found.");
+    }
+    return handleResponse(res, 200, "All Registered Users Fetched Successfully", {
+      users: registrationDoc.registrations,
+    });
+  } catch (error) {
+    console.error("Fetch Users Error:", error);
+    return handleResponse(res, 500, "An error occurred while fetching users.", {
+      error: error.message,
+    });
+  }
+};
+
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -231,14 +326,14 @@ exports.forgotPassword = async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const tokenExpiry = Date.now() + 3600000; 
+    const tokenExpiry = Date.now() + 3600000;
 
     user.resetToken = resetToken;
     user.resetTokenExpiry = tokenExpiry;
     await user.save();
 
     const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
-    
+
     const emailContent = `
       Password Reset Request
       Click the link below to reset your password:
@@ -262,13 +357,13 @@ exports.resetPassword = async (req, res) => {
   try {
     const user = await Users.findOne({
       resetToken: token,
-      resetTokenExpiry: { $gt: Date.now()+360000 },
+      resetTokenExpiry: { $gt: Date.now() + 360000 },
     });
 
     if (!user) {
       return handleResponse(res, 400, "Invalid or expired token");
     }
-console.log("newPassword=====",newPassword);
+    console.log("newPassword=====", newPassword);
     // user.password = await bcrypt.hash(newPassword, 10);
     user.password = newPassword;
     user.resetToken = null;
