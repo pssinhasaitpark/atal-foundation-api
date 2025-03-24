@@ -15,7 +15,6 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-
 const upload = multer({
   storage,
       // fileFilter,
@@ -25,6 +24,9 @@ const upload = multer({
   { name: "detailImages", maxCount: 10 }, 
   { name: "videos", maxCount: 5 },  
   { name: "banner", maxCount: 1 },
+  { name: "book_images", maxCount: 10 },
+  { name: "audio_section_audio", maxCount: 10 } ,
+  { name: "audio_section_images", maxCount: 10 } 
 ]);
 
 const convertImagesToWebP = async (req, res, next) => {
@@ -92,28 +94,11 @@ const audiofileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-// Create the multer upload middleware for audio files
 const uploadAudio = multer({
   storage,
   audiofileFilter,
-  limits: { fileSize: 50 * 1024 * 1024 }, // Set file size limit to 50 MB
-}).single("audio"); // Expect the audio file to be uploaded under the "audio" field
+  limits: { fileSize: 50 * 1024 * 1024 }, 
+}).single("audio"); 
 
 module.exports = { upload, convertImagesToWebP ,convertImagesToWebPMultiple, uploadAudio};
 
-
-// const upload =   multer({
-//     storage,
-//     fileFilter,
-//     limits: { fieldSize: 50 * 1024 * 1024 }
-// }).array("images", 10);
-
-
-// const upload = multer({
-//   storage,
-//   fileFilter,
-//   limits: { fileSize: 50 * 1024 * 1024 }, 
-// }).fields([
-//   { name: "banner", maxCount: 1 },
-//   { name: "images", maxCount: 10 },
-// ]);

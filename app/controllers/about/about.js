@@ -2,6 +2,7 @@ const About = require("../../models/about");
 const sharp = require('sharp');
 const cloudinary = require("cloudinary").v2;
 const mongoose = require("mongoose");
+const { handleResponse } = require("../../utils/helper")
 
 const createAboutSection = async (req, res) => {
   try {

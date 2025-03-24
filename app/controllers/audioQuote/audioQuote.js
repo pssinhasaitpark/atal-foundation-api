@@ -3,49 +3,60 @@ const AudioQuote = require("../../models/audioQuote");
 const path = require("path");
 const fs = require("fs");
 
-const createAudioQuote = async (req, res, next) => {
+const createAudioQuote = async (req, res) => {
   try {
-    if (!req.file) {
-      return handleResponse(res, 400, "No audio file uploaded.");
-    }
+    const { heading, description, title } = req.body;
 
-    const filePath = path.join(__dirname, "../../uploads", req.file.originalname);
+    const images = req.convertedFiles['audio_section_images'] || [];
+    const audioFiles = req.convertedFiles['audio_section_audio'] || [];
 
-    fs.writeFileSync(filePath, req.file.buffer);
-
-    const audioQuote = new AudioQuote({
-      filePath: filePath,
+    const audioSectionData = audioFiles.map((audioFile, index) => {
+      return {
+        title: title || `Audio Section ${index + 1}`,
+        images: images[index] || '',
+        audio: audioFile,
+      };
     });
 
-    await audioQuote.save();
+    const newAudioQuote = new AudioQuote({
+      heading,
+      description,
+      audio_section: audioSectionData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
-    handleResponse(res, 200, "Audio file uploaded successfully.", {
-      filePath,
-      _id: audioQuote._id,
+    await newAudioQuote.save();
+
+    return handleResponse(res, 201, 'Audio quote created successfully', {
+      id: newAudioQuote._id,
+      heading: newAudioQuote.heading,
+      description: newAudioQuote.description,
+      audio_section: newAudioQuote.audio_section,
     });
   } catch (error) {
-    console.error("Error uploading audio quote:", error);
-    next(error);
+    console.error("Error creating audio quote:", error);
+    return handleResponse(res, 500, error.message, {
+      id: null,
+      heading: null,
+      description: null,
+      audio_section: [],
+    });
   }
 };
 
-const getAudioQuotes = async (req, res, next) => {
+const getAudioQuotes = async (req, res) => {
   try {
     const audioQuotes = await AudioQuote.find();
 
-    if (!audioQuotes || audioQuotes.length === 0) {
-      return handleResponse(res, 404, "No audio quotes found.");
+    if (audioQuotes.length === 0) {
+      return handleResponse(res, 404, 'No audio quotes found', { data: [] });
     }
 
-    const formattedQuotes = audioQuotes.map((audioQuote) => ({
-      _id: audioQuote._id,
-      filePath: audioQuote.filePath,
-    }));
-
-    handleResponse(res, 200, "Audio quotes retrieved successfully.", { audioQuotes: formattedQuotes });
+    return handleResponse(res, 200, 'Audio quotes retrieved successfully', { data: audioQuotes });
   } catch (error) {
-    console.error("Error retrieving audio quotes:", error);
-    next(error);
+    console.error("Error fetching audio quotes:", error);
+    return handleResponse(res, 500, error.message, { data: [] });
   }
 };
 
@@ -68,79 +79,140 @@ const getAudioQuotesById = async (req, res, next) => {
     next(error);
   }
 };
-/*
-const updateAudioQuoteById = async (req, res, next) => {
+
+const updateAudioQuotes = async (req, res) => {
   try {
-    const { id } = req.params;
-    let updatedData = {};
+    const { audioQuoteId } = req.params;
+    const { heading, description, title } = req.body;
 
-    // Check if a new audio file is uploaded
-    if (req.file) {
-      const filePath = path.join(__dirname, "../../uploads", req.file.originalname);
+    const images = req.convertedFiles['audio_section_images'] || [];
+    const audioFiles = req.convertedFiles['audio_section_audio'] || [];
 
-      // Write the new file to the directory
-      fs.writeFileSync(filePath, req.file.buffer);
-
-      // Add filePath to updatedData
-      updatedData.filePath = filePath;
-    }
-
-    // Update the audio quote in the database
-    const audioQuote = await AudioQuote.findByIdAndUpdate(id, updatedData, { new: true });
-
+    const audioQuote = await AudioQuote.findById(audioQuoteId);
     if (!audioQuote) {
-      return handleResponse(res, 404, "Audio quote not found.");
+      return handleResponse(res, 404, 'Audio quote not found', { data: null });
     }
 
-    handleResponse(res, 200, "Audio quote updated successfully.", {
-      _id: audioQuote._id,
-      filePath: audioQuote.filePath,
+    if (heading) audioQuote.heading = heading;
+    if (description) audioQuote.description = description;
+
+    if (audioFiles.length > 0 || images.length > 0) {
+      const updatedSections = audioFiles.map((audioFile, index) => {
+        return {
+          title: title || `Audio Section ${index + 1}`,
+          images: images[index] || '',
+          audio: audioFile,
+        };
+      });
+
+      updatedSections.forEach(newSection => {
+        audioQuote.audio_section.push(newSection);
+      });
+    }
+
+    await audioQuote.save();
+
+    return handleResponse(res, 200, 'Audio quote updated successfully', {
+      id: audioQuote._id,
+      heading: audioQuote.heading,
+      description: audioQuote.description,
+      audio_section: audioQuote.audio_section,
     });
   } catch (error) {
-    console.error("Error updating audio quote by ID:", error);
-    next(error);
-  }
-};
-*/
-
-const updateAudioQuoteById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { user_role } = req.user;
-
-    // Check if the user has permission to update
-    if (user_role !== "admin" && user_role !== "super-admin") {
-      return handleResponse(res, 403, "Access denied: Admins only.");
-    }
-
-    let updatedData = {};
-
-    // Check if a new audio file is uploaded
-    if (req.file) {
-      const filePath = path.join(__dirname, "../../uploads", req.file.originalname);
-
-      // Write the new file to the directory
-      fs.writeFileSync(filePath, req.file.buffer);
-
-      // Add filePath to updatedData
-      updatedData.filePath = filePath;
-    }
-
-    // Update the audio quote in the database
-    const audioQuote = await AudioQuote.findByIdAndUpdate(id, updatedData, { new: true });
-
-    if (!audioQuote) {
-      return handleResponse(res, 404, "Audio quote not found.");
-    }
-
-    handleResponse(res, 200, "Audio quote updated successfully.", {
-      _id: audioQuote._id,
-      filePath: audioQuote.filePath,
+    console.error("Error updating audio quote:", error);
+    return handleResponse(res, 500, error.message, {
+      id: null,
+      heading: null,
+      description: null,
+      audio_section: [],
     });
-  } catch (error) {
-    console.error("Error updating audio quote by ID:", error);
-    next(error);
   }
 };
 
-module.exports = { createAudioQuote, getAudioQuotes, getAudioQuotesById, updateAudioQuoteById};
+const updateAudioSection = async (req, res) => {
+  try {
+    const { audioQuoteId, sectionId } = req.params;
+    const { heading, description, title } = req.body;
+
+    const images = req.convertedFiles['audio_section_images'] || [];
+    const audioFiles = req.convertedFiles['audio_section_audio'] || [];
+
+    const audioQuote = await AudioQuote.findById(audioQuoteId);
+    if (!audioQuote) {
+      return handleResponse(res, 404, 'Audio quote not found', { data: null });
+    }
+
+    if (heading) audioQuote.heading = heading;
+    if (description) audioQuote.description = description;
+
+    if (sectionId) {
+      const section = audioQuote.audio_section.id(sectionId);
+      if (!section) {
+        return handleResponse(res, 404, 'Section not found', { data: null });
+      }
+
+      if (title) section.title = title;
+
+      if (audioFiles.length > 0) {
+        section.audio = audioFiles[0];
+      }
+
+      if (images.length > 0) {
+        section.images = images[0];
+      }
+    } else {
+      audioQuote.audio_section.push({
+        title: title || `Audio Section ${audioQuote.audio_section.length + 1}`,
+        audio: audioFiles[0] || '',
+        images: images[0] || '',
+      });
+    }
+
+    await audioQuote.save();
+
+    return handleResponse(res, 200, 'Audio quote section updated successfully', {
+      id: audioQuote._id,
+      heading: audioQuote.heading,
+      description: audioQuote.description,
+      audio_section: audioQuote.audio_section,
+    });
+  } catch (error) {
+    console.error('Error updating audio section:', error);
+    return handleResponse(res, 500, 'Internal server error', { data: [] });
+  }
+};
+
+const deleteAudioSection = async (req, res) => {
+  try {
+    const { audioQuoteId, sectionId } = req.params;
+
+    const audioQuote = await AudioQuote.findById(audioQuoteId);
+    if (!audioQuote) {
+      return handleResponse(res, 404, 'Audio quote not found', { data: null });
+    }
+
+    const sectionIndex = audioQuote.audio_section.findIndex(section => section._id.toString() === sectionId);
+
+    if (sectionIndex === -1) {
+      return handleResponse(res, 404, 'Audio section not found', { data: null });
+    }
+
+    audioQuote.audio_section.splice(sectionIndex, 1);
+
+    await audioQuote.save();
+
+    return handleResponse(res, 200, 'Audio section removed successfully', {});
+  } catch (error) {
+    console.error('Error removing audio section:', error);
+    return handleResponse(res, 500, 'Internal server error', { data: [] });
+  }
+};
+
+module.exports = {
+  createAudioQuote,
+  getAudioQuotes,
+  getAudioQuotesById,
+  updateAudioQuotes,
+  updateAudioSection,
+  deleteAudioSection
+};

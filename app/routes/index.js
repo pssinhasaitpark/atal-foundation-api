@@ -15,6 +15,7 @@ const newsRoutes= require("./news")
 const homePageRoutes= require("./homePage")
 const supportSpeakerRoutes = require("./supportSpeaker")
 const audioquoteRoutes = require("./audioQuote")
+const bookRoutes = require("./book");
 
 module.exports = (app) => {
   app.use("/api", userRoutes);
@@ -33,5 +34,6 @@ module.exports = (app) => {
   app.use("/api/news", newsRoutes);
   app.use("/api/homePage", homePageRoutes);
   app.use("/api/support-speaker", supportSpeakerRoutes);
-  app.use("/api/audio-quote", audioquoteRoutes)
+  app.use("/api/audio-quote", audioquoteRoutes);
+  app.use("/api/books", bookRoutes);
 };
