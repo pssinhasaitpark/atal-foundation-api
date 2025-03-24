@@ -16,6 +16,7 @@ app.use(
       "http://192.168.0.131:3000",
       "http://192.168.0.239:3000",
       "http://192.168.0.115:3000",
+      "http://192.168.0.121:3000",
       "https://admin-atal-foundation.netlify.app",
       "https://atal-foundation.netlify.app"
     ],
@@ -33,8 +34,8 @@ const connectDB = require('./app/dbConfig/dbConfig');
 connectDB();
 
 
-
 require("./app/routes")(app);
+require("./app/routes/media")(app);
 
 app.get("/", (req, res) => {
 

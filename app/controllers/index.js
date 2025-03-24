@@ -15,5 +15,6 @@ module.exports = {
     news: require("./news/news"),
     homePage: require("./homePage/homePage"),
     supportSpeaker: require("./supportSpeaker/supportSpeaker"),
-    audioQuote: require("./audioQuote/audioQuote")
+    audioQuote: require("./audioQuote/audioQuote"),
+    book: require("./book/book")
 }
