@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Message Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #F4F4F4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            border: 1px solid #f68633
+        }
+        .header {
+            background: #f68633;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px 10px 0 0;
+            font-size: 20px;
+        }
+        .content {
+            padding: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">New Message Received</div>
+        <div class="content">
+            <p>Hello Team,</p>
+            <p>A new message has been sent by the user with the following details:</p>
+            <ul>
+                <li><strong>Full Name:</strong> <%= name %></li>
+                <li><strong>Email:</strong> <%= email %></li>
+                <li><strong>Message:</strong> <%= message %></li>
+            </ul>
+            <p>Please review and respond accordingly.</p>
+        </div>
+        <div class="footer">&copy; 2025 Atal Foundation | All Rights Reserved</div>
+    </div>
+</body>
+</html>

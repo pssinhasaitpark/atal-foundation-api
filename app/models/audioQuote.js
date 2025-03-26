@@ -7,16 +7,13 @@ const audioQuoteSchema = new mongoose.Schema({
   audio_section: [
     {
       title: {
-        type: String, 
-        required: true
+        type: String
       },
       images: {
-        type: String, 
-        required: true
+        type: String
       },
       audio: {
-        type: String, 
-        required: true
+        type: String
       }
     }
   ],

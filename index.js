@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const path = require("path");
 
 require("dotenv").config();
 const host = process.env.HOST;
@@ -26,7 +27,9 @@ app.use(
   })
 );
 
+app.use(express.static(path.join(__dirname, 'public')));
 
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 

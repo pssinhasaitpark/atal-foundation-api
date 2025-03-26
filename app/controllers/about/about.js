@@ -11,59 +11,69 @@ const createAboutSection = async (req, res) => {
       try {
         removeImages = JSON.parse(req.body.removeImages);
       } catch (error) {
-        return handleResponse(res, 400, "Invalid removeImages format. Must be a JSON array.");      
+        return handleResponse(res, 400, "Invalid removeImages format. Must be a JSON array.");
       }
     }
 
-    const bannerImage = req.files?.banner ? req.files.banner[0] : null;
-    const images = req.files?.images || [];
+    // const bannerImage = req.files?.banner ? req.files.banner[0] : null;
 
-    const uploadBannerImage = bannerImage
-      ? new Promise((resolve, reject) => {
-          sharp(bannerImage.buffer)
-            .webp()
-            .toBuffer()
-            .then((webpBuffer) => {
-              cloudinary.uploader.upload_stream(
-                { resource_type: "image" },
-                (error, result) => {
-                  if (error) {
-                    reject(error);
-                  } else {
-                    resolve(result.secure_url);
-                  }
-                }
-              ).end(webpBuffer);
-            })
-            .catch((error) => reject(error));
-        })
-      : Promise.resolve("");
+    const bannerUrl = (req.convertedFiles && req.convertedFiles.banner && req.convertedFiles.banner[0]);
 
-    const uploadImages = images.map((image) =>
-      new Promise((resolve, reject) => {
-        sharp(image.buffer)
-          .webp()
-          .toBuffer()
-          .then((webpBuffer) => {
-            cloudinary.uploader.upload_stream(
-              { resource_type: "image" },
-              (error, result) => {
-                if (error) {
-                  reject(error);
-                } else {
-                  resolve(result.secure_url);
-                }
-              }
-            ).end(webpBuffer);
-          })
-          .catch((error) => reject(error));
-      })
-    );
 
-    const uploadResults = await Promise.allSettled([uploadBannerImage, ...uploadImages]);
+    // const images = req.files?.images || [];
 
-    const bannerUrl = uploadResults[0].status === "fulfilled" ? uploadResults[0].value : "";
-    const imageUrls = uploadResults.slice(1).map((result) => (result.status === "fulfilled" ? result.value : ""));
+    let imageUrls = [];
+    if (req.convertedFiles && req.convertedFiles.images) {
+      imageUrls = [...imageUrls, ...req.convertedFiles.images];
+    }
+
+    // const uploadBannerImage = bannerImage
+    //   ? new Promise((resolve, reject) => {
+    //       sharp(bannerImage.buffer)
+    //         .webp()
+    //         .toBuffer()
+    //         .then((webpBuffer) => {
+    //           cloudinary.uploader.upload_stream(
+    //             { resource_type: "image" },
+    //             (error, result) => {
+    //               if (error) {
+    //                 reject(error);
+    //               } else {
+    //                 resolve(result.secure_url);
+    //               }
+    //             }
+    //           ).end(webpBuffer);
+    //         })
+    //         .catch((error) => reject(error));
+    //     })
+    //   : Promise.resolve("");
+
+    // const uploadImages = images.map((image) =>
+    //   new Promise((resolve, reject) => {
+    //     sharp(image.buffer)
+    //       .webp()
+    //       .toBuffer()
+    //       .then((webpBuffer) => {
+    //         cloudinary.uploader.upload_stream(
+    //           { resource_type: "image" },
+    //           (error, result) => {
+    //             if (error) {
+    //               reject(error);
+    //             } else {
+    //               resolve(result.secure_url);
+    //             }
+    //           }
+    //         ).end(webpBuffer);
+    //       })
+    //       .catch((error) => reject(error));
+    //   })
+    // );
+
+    // const uploadResults = await Promise.allSettled([uploadBannerImage, ...uploadImages]);
+
+    // const bannerUrl = uploadResults[0].status === "fulfilled" ? uploadResults[0].value : "";
+    // const imageUrls = uploadResults.slice(1).map((result) => (result.status === "fulfilled" ? result.value : ""));
+
 
     let existingAbout = await About.findOne({});
 
@@ -114,17 +124,17 @@ const createAboutSection = async (req, res) => {
 };
 
 const getAllAboutSections = async (req, res) => {
-    try {
-      const aboutSections = await About.find();
-      if (!aboutSections.length) {
-        return res.status(404).json({ message: "No About sections found." });
-      }
-      res.status(200).json(aboutSections);
-    } catch (error) {
-      res.status(500).json({ error: "An error occurred while fetching About sections." });
+  try {
+    const aboutSections = await About.find();
+    if (!aboutSections.length) {
+      return res.status(404).json({ message: "No About sections found." });
     }
-  };
-  
+    res.status(200).json(aboutSections);
+  } catch (error) {
+    res.status(500).json({ error: "An error occurred while fetching About sections." });
+  }
+};
+
 const getAboutSection = async (req, res) => {
   try {
     const about = await About.findById(req.params.id);
@@ -139,60 +149,75 @@ const getAboutSection = async (req, res) => {
 
 const updateAboutSection = async (req, res) => {
   try {
-      const { aboutId, sectionId } = req.params;
+    const { aboutId, sectionId } = req.params;
 
-      if (!mongoose.Types.ObjectId.isValid(aboutId) || !mongoose.Types.ObjectId.isValid(sectionId)) {
-          return res.status(400).json({ message: "Invalid ID format." });
-      }
+    if (!req.user || (req.user.user_role !== "admin" && req.user.user_role !== "super-admin")) {
+      return res.status(403).json({ message: "Access denied: Admins only." });
+    }
 
-      const about = await About.findById(aboutId);
-      if (!about) {
-          return res.status(404).json({ message: "About section not found." });
-      }
+    if (!mongoose.Types.ObjectId.isValid(aboutId) || !mongoose.Types.ObjectId.isValid(sectionId)) {
+      return res.status(400).json({ message: "Invalid ID format." });
+    }
 
-      const section = about.sections.id(sectionId);
-      if (!section) {
-          return res.status(404).json({ message: "Section not found." });
-      }
+    const updateQuery = {};
 
+    // let uploadedImageUrls = [];
 
-      let uploadedImageUrls = [];
-      if (req.files?.images) { 
-          const imageFiles = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+    // const images = req.files?.images || [];
 
-          for (const imageFile of imageFiles) {
-              const imageBuffer = await sharp(imageFile.buffer).webp().toBuffer();
+    let uploadedImageUrls = [];
+    if (req.convertedFiles && req.convertedFiles.images) {
+      uploadedImageUrls = [...uploadedImageUrls, ...req.convertedFiles.images];
+    }
 
-              const uploadedImageUrl = await new Promise((resolve, reject) => {
-                  const stream = cloudinary.uploader.upload_stream({ resource_type: "image" }, (error, result) => {
-                      if (error) reject(error);
-                      else resolve(result.secure_url);
-                  });
-                  stream.end(imageBuffer);
-              });
+    // if (req.files?.images) {
+    //   const imageFiles = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
 
-              uploadedImageUrls.push(uploadedImageUrl);
-          }
-      }
+    //   uploadedImageUrls = await Promise.all(
+    //     imageFiles.map(async (imageFile) => {
+    //       const imageBuffer = await sharp(imageFile.buffer).webp().toBuffer();
 
+    //       return new Promise((resolve, reject) => {
+    //         const stream = cloudinary.uploader.upload_stream({ resource_type: "image" }, (error, result) => {
+    //           if (error) reject(error);
+    //           else resolve(result.secure_url);
+    //         });
+    //         stream.end(imageBuffer);
+    //       });
+    //     })
+    //   );
+    // }
 
-      section.title = req.body.title || section.title;
-      section.description = req.body.description || section.description;
-      if (uploadedImageUrls.length > 0) {
-          section.image = uploadedImageUrls[0];  
-      }
+    // Prepare section updates
+    if (req.body.title) {
+      updateQuery[`sections.$.title`] = req.body.title;
+    }
+    if (req.body.description) {
+      updateQuery[`sections.$.description`] = req.body.description;
+    }
+    if (uploadedImageUrls.length > 0) {
+      updateQuery[`sections.$.image`] = uploadedImageUrls[0]; 
+    }
 
-      about.markModified("sections"); 
-      await about.save();
+    const updatedAbout = await About.findOneAndUpdate(
+      { _id: aboutId, "sections._id": sectionId },
+      { $set: updateQuery },
+      { new: true, runValidators: true }
+    );
 
+    if (!updatedAbout) {
+      return res.status(404).json({ message: "About section or section not found." });
+    }
 
-      res.status(200).json({
-          message: "Section updated successfully!",
-          updatedSection: about.sections.id(sectionId),
-      });
+    const updatedSection = updatedAbout.sections.id(sectionId);
+
+    res.status(200).json({
+      message: "Section updated successfully!",
+      updatedSection,
+    });
   } catch (error) {
-      console.error("Error updating section:", error);
-      res.status(500).json({ error: "An error occurred while updating the section." });
+    console.error("Error updating section:", error);
+    res.status(500).json({ error: "An error occurred while updating the section." });
   }
 };
 
@@ -207,7 +232,7 @@ const deleteAboutSection = async (req, res) => {
     const updatedAbout = await About.findByIdAndUpdate(
       aboutId,
       { $pull: { sections: { _id: sectionId } } },
-      { new: true } 
+      { new: true }
     );
 
     if (!updatedAbout) {
@@ -216,7 +241,7 @@ const deleteAboutSection = async (req, res) => {
 
     res.status(200).json({
       message: "Section deleted successfully!",
-      updatedAbout, 
+      updatedAbout,
     });
   } catch (error) {
     res.status(500).json({ error: "An error occurred while deleting the section." });
@@ -227,7 +252,7 @@ const removeImageFromAboutSection = async (req, res) => {
   try {
     const { id } = req.params;
     const { imageUrl } = req.body;
-    
+
     const about = await About.findById(id);
     if (!about) {
       return res.status(404).json({ error: "About section not found" });

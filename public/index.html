@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New User Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #F4F4F4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            border: 1px solid #f68633
+        }
+        .header {
+            background: #f68633;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px 10px 0 0;
+            font-size: 20px;
+        }
+        .content {
+            padding: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">New User Registration</div>
+        <div class="content">
+            <p>Hello Team,</p>
+            <p>A new user has registered with the following details:</p>
+            <ul>
+                <li><strong>Name:</strong> <%= first_name %> <%= last_name %></li>
+                <li><strong>Email:</strong> <%= email %></li>
+                <li><strong>Mobile:</strong> <%= mobile %></li>
+                <li><strong>Address:</strong> <%= address %></li>
+                <li><strong>Gender:</strong> <%= gender %></li>
+                <li><strong>Date of Birth:</strong> <%= date_of_birth %></li>
+                <li><strong>State:</strong> <%= state %></li>
+                <li><strong>Category:</strong> <%= category %></li>
+                <li><strong>Designation:</strong> <%= designation %></li>
+                <li><strong>Message:</strong> <%= message %></li>
+            </ul>
+            <p>Please review the details and proceed accordingly.</p>
+        </div>
+        <div class="footer">&copy; 2025 Atal Foundation | All Rights Reserved</div>
+    </div>
+</body>
+</html>
