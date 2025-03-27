@@ -156,7 +156,7 @@ const imageAndVideoUploadMiddleware = (req, res, next) => {
                     const fileExtension = path.extname(file.originalname).toLowerCase();
 
                     if ([".mp4", ".mkv", ".avi", ".mov", ".flv"].includes(fileExtension)) {
-                        const videoUrl = `${process.env.VERCEL_URL}/${file.filename}`;
+                        const videoUrl = `${process.env.VERCEL_URL}/media/${file.filename}`;
                         convertedFilePaths.push(videoUrl);
                     }
                     else if (key === "audio_section_audio") {
