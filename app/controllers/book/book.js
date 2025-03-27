@@ -48,7 +48,7 @@ const createBook = async (req, res, next) => {
         await newBook.save();
 
 
-        return handleResponse(res, 200, "Book created successfully", {
+        return handleResponse(res, 201, "Book created successfully", {
             book_title,
             cover_image: coverImageUrl,
             description,

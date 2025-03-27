@@ -62,7 +62,7 @@ const imageConversionMiddlewareMultiple = (req, res, next) => {
                 if (key === "audio_section_audio") {
                     for (const file of files) {
                         const uploadedFilePath = path.join(BASE_PATH, file.filename);
-                        const fileUrl = `http://192.168.0.14:5050/media/${file.filename}`;
+                        const fileUrl = `${process.env.VERCEL_URL}/media/${file.filename}`;
                         convertedFilePaths.push(fileUrl);
                     }
                 } else {
@@ -77,7 +77,7 @@ const imageConversionMiddlewareMultiple = (req, res, next) => {
 
                         fs.unlinkSync(uploadedFilePath);
 
-                        const convertedFileUrl = `http://192.168.0.14:5050/media/${webpFileName}`;
+                        const convertedFileUrl = `${process.env.VERCEL_URL}/media/${webpFileName}`;
                         convertedFilePaths.push(convertedFileUrl);
                     }
                 }
@@ -156,11 +156,11 @@ const imageAndVideoUploadMiddleware = (req, res, next) => {
                     const fileExtension = path.extname(file.originalname).toLowerCase();
 
                     if ([".mp4", ".mkv", ".avi", ".mov", ".flv"].includes(fileExtension)) {
-                        const videoUrl = `http://192.168.0.14:5050/media/${file.filename}`;
+                        const videoUrl = `${process.env.VERCEL_URL}/${file.filename}`;
                         convertedFilePaths.push(videoUrl);
                     }
                     else if (key === "audio_section_audio") {
-                        const audioUrl = `http://192.168.0.14:5050/media/${file.filename}`;
+                        const audioUrl = `${process.env.VERCEL_URL}/media/${file.filename}`;
                         convertedFilePaths.push(audioUrl);
                     }
                     else {
@@ -173,7 +173,7 @@ const imageAndVideoUploadMiddleware = (req, res, next) => {
 
                         fs.unlinkSync(uploadedFilePath);
 
-                        const convertedFileUrl = `http://192.168.0.14:5050/media/${webpFileName}`;
+                        const convertedFileUrl = `${process.env.VERCEL_URL}/media/${webpFileName}`;
                         convertedFilePaths.push(convertedFileUrl);
                     }
                 }
