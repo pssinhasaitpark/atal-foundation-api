@@ -19,7 +19,9 @@ app.use(
       "http://192.168.0.115:3000",
       "http://192.168.0.121:3000",
       "https://admin-atal-foundation.netlify.app",
-      "https://atal-foundation.netlify.app"
+      "https://atal-foundation.netlify.app",
+      "http://82.29.167.130:3002",
+      "http://82.29.167.130:3003"
     ],
     methods: ["GET", "POST", "HEAD", "PUT", "PATCH", "DELETE"],
     optionsSuccessStatus: 200,
