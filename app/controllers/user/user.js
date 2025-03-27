@@ -130,83 +130,45 @@ exports.me = async (req, res) => {
 };
 
 exports.updateUser = async (req, res) => {
-  const { user_name, first_name, last_name, email, mobile, password } =
-    req.body;
+  const { user_name, first_name, last_name, email, mobile, password } = req.body;
 
   try {
-    const user = await Users.findById(req.user.user_id);
-    if (!user) {
+    // Prepare updated data for the user
+    const updatedData = {};
+    if (user_name) updatedData.user_name = user_name;
+    if (first_name) updatedData.first_name = first_name;
+    if (last_name) updatedData.last_name = last_name;
+    if (email) updatedData.email = email;
+    if (mobile) updatedData.mobile = mobile;
+    if (password) updatedData.password = password;
+
+    // Use findByIdAndUpdate to apply the updates
+    const updatedUser = await Users.findByIdAndUpdate(
+      req.user.user_id,
+      { $set: updatedData },
+      { new: true, runValidators: true }
+    );
+
+    // Check if user exists after update
+    if (!updatedUser) {
       return handleResponse(res, 404, "User not found.");
     }
 
-    if (user_name) user.user_name = user_name;
-    if (first_name) user.first_name = first_name;
-    if (last_name) user.last_name = last_name;
-    if (email) user.email = email;
-    if (mobile) user.mobile = mobile;
-    if (password) user.password = password;
-
-    await user.save();
-
-    return handleResponse(res, 200, "User updated successfully!", { user_name, first_name, last_name, email, mobile });
+    // Return success response with the required fields
+    return handleResponse(res, 200, "User updated successfully!", {
+      user_name: updatedUser.user_name,
+      first_name: updatedUser.first_name,
+      last_name: updatedUser.last_name,
+      email: updatedUser.email,
+      mobile: updatedUser.mobile,
+    });
   } catch (error) {
     console.error(error);
-    return handleResponse(res, 500, "An error occurred while updating the user.", { error: error.message });
+    return handleResponse(res, 500, "An error occurred while updating the user.", {
+      error: error.message,
+    });
   }
 };
-/*
-exports.registerForm = async (req, res, next) => {
-  const { error } = userRegistrationFormSchema.validate(req.body);
-  if (error) {
-    return handleResponse(res, 400, error.details[0].message);
-  }
-
-  const { first_name, last_name, email, mobile, address, gender, date_of_birth, city, state, category, designation, message } = req.body;
-
-  try {
-    let imageUrls = [];
-
-    if (req.files && req.files.images) {
-      for (const file of req.files.images) {
-        try {
-          const uploadedImage = await cloudinary.uploadImageToCloudinary(file.buffer);
-          if (uploadedImage) {
-            imageUrls.push(uploadedImage);
-          }
-        } catch (uploadError) {
-        }
-      }
-    }
-
-    const data = {
-      first_name,
-      last_name,
-      email,
-      mobile,
-      address,
-      gender,
-      date_of_birth,
-      city,
-      state,
-      category,
-      designation,
-      message,
-      images: imageUrls,
-      user_role: "user",
-      user_id: new mongoose.Types.ObjectId(),
-    };
-
-
-    const newUserForm = new UserForm(data);
-    await newUserForm.save();
-
-    return handleResponse(res, 201, "User Registration Form Successfully Submitted!", data);
-  } catch (error) {
-    console.error("Form Submission Error:", error);
-    return handleResponse(res, 500, "An error occurred while submitting the form.", { error: error.message });
-  }
-};
-*/
 
 exports.registerForm = async (req, res, next) => {
   const { error } = userRegistrationFormSchema.validate(req.body);
@@ -230,19 +192,24 @@ exports.registerForm = async (req, res, next) => {
   } = req.body;
 
   try {
-    let imageUrls = [];
+    // let imageUrls = [];
 
-    if (req.files && req.files.images) {
-      for (const file of req.files.images) {
-        try {
-          const uploadedImage = await cloudinary.uploadImageToCloudinary(file.buffer);
-          if (uploadedImage) {
-            imageUrls.push(uploadedImage);
-          }
-        } catch (uploadError) {
-          console.error("Image Upload Error:", uploadError);
-        }
-      }
+    // if (req.files && req.files.images) {
+    //   for (const file of req.files.images) {
+    //     try {
+    //       const uploadedImage = await cloudinary.uploadImageToCloudinary(file.buffer);
+    //       if (uploadedImage) {
+    //         imageUrls.push(uploadedImage);
+    //       }
+    //     } catch (uploadError) {
+    //       console.error("Image Upload Error:", uploadError);
+    //     }
+    //   }
+    // }
+
+    let imageUrls = [];
+    if (req.convertedFiles && req.convertedFiles.images) {
+      imageUrls = [...imageUrls, ...req.convertedFiles.images];
     }
 
     const newRegistration = {
@@ -285,19 +252,6 @@ exports.registerForm = async (req, res, next) => {
   }
 };
 
-
-/*
-exports.getAllRegitations = async (req, res) => {
-  try {
-    const users = await UserForm.find();
-    return handleResponse(res, 200, "All Registered Users Fetched Successfully", users);
-  } catch (error) {
-    console.error("Fetch Users Error:", error);
-    return handleResponse(res, 500, "An error occurred while fetching users.", { error: error.message });
-  }
-};
-*/
-
 exports.getAllRegitations = async (req, res) => {
   try {
     const registrationDoc = await UserForm.findOne();
@@ -314,7 +268,6 @@ exports.getAllRegitations = async (req, res) => {
     });
   }
 };
-
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;

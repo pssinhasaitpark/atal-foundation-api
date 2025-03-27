@@ -15,18 +15,23 @@ const createSupportSpeaker = async (req, res) => {
 
         const { name, post, location } = req.body;
 
-        let imageUrls = [];
+        // let imageUrls = [];
 
-        if (req.files && req.files.images) {
-            const imageFiles = req.files.images || [];
+        // if (req.files && req.files.images) {
+        //     const imageFiles = req.files.images || [];
 
-            if (imageFiles.length > 0) {
-                const uploadImagePromises = imageFiles.map(async (file) =>
-                    cloudinary.uploadImageToCloudinary(file.buffer)
-                );
-                const uploadedImages = await Promise.all(uploadImagePromises);
-                imageUrls = uploadedImages.map((url) => ({ url }));
-            }
+        //     if (imageFiles.length > 0) {
+        //         const uploadImagePromises = imageFiles.map(async (file) =>
+        //             cloudinary.uploadImageToCloudinary(file.buffer)
+        //         );
+        //         const uploadedImages = await Promise.all(uploadImagePromises);
+        //         imageUrls = uploadedImages.map((url) => ({ url }));
+        //     }
+        // }
+
+
+        if (req.convertedFiles && req.convertedFiles.images) {
+            imageUrls = req.convertedFiles.images.map((url) => ({ url }));
         }
 
         const newSpeaker = new SupportSpeaker({
@@ -89,10 +94,9 @@ const getSupportSpeakerById = async (req, res) => {
 
 const updateSupportSpeakerById = async (req, res) => {
     try {
-        const { id } = req.params; // Get the ID from the URL parameters
+        const { id } = req.params;
         const { name, post, location } = req.body;
 
-        // Find the existing support speaker by ID
         const supportSpeaker = await SupportSpeaker.findById(id);
 
         if (!supportSpeaker) {
@@ -101,28 +105,42 @@ const updateSupportSpeakerById = async (req, res) => {
 
         let imageUrls = supportSpeaker.images || [];
 
-        if (req.files && req.files.images) {
-            const imageFiles = req.files.images || [];
+        //   if (req.files && req.files.images) {
+        //     const imageFiles = req.files.images || [];
 
-            if (imageFiles.length > 0) {
-                const uploadImagePromises = imageFiles.map(async (file) =>
-                    cloudinary.uploadImageToCloudinary(file.buffer)
-                );
-                const uploadedImages = await Promise.all(uploadImagePromises);
-                imageUrls = uploadedImages.map((url) => ({ url }));
-            }
+        //     if (imageFiles.length > 0) {
+        //       const uploadImagePromises = imageFiles.map(async (file) =>
+        //         cloudinary.uploadImageToCloudinary(file.buffer)
+        //       );
+        //       const uploadedImages = await Promise.all(uploadImagePromises);
+        //       imageUrls = uploadedImages.map((url) => ({ url }));
+        //     }
+        //   }
+
+        if (req.convertedFiles && req.convertedFiles.images) {
+            imageUrls = req.convertedFiles.images.map((url) => ({ url }));
         }
 
-        // Update fields only if provided
-        supportSpeaker.name = name || supportSpeaker.name;
-        supportSpeaker.post = post || supportSpeaker.post;
-        supportSpeaker.location = location || supportSpeaker.location;
-        supportSpeaker.images = imageUrls.length > 0 ? imageUrls : supportSpeaker.images;
 
-        await supportSpeaker.save();
+        const updatedData = {
+            name: name || supportSpeaker.name,
+            post: post || supportSpeaker.post,
+            location: location || supportSpeaker.location,
+            images: imageUrls.length > 0 ? imageUrls : supportSpeaker.images,
+        };
+
+        const updatedSupportSpeaker = await SupportSpeaker.findByIdAndUpdate(
+            id,
+            { $set: updatedData },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedSupportSpeaker) {
+            return handleResponse(res, 404, "Support Speaker not found");
+        }
 
         return handleResponse(res, 200, "Support Speaker Updated Successfully", {
-            supportSpeaker,
+            supportSpeaker: updatedSupportSpeaker,
         });
     } catch (error) {
         return handleResponse(res, 500, "Error Updating Support Speaker", {
@@ -130,6 +148,50 @@ const updateSupportSpeakerById = async (req, res) => {
         });
     }
 };
+
+// const updateSupportSpeakerById = async (req, res) => {
+//     try {
+//         const { id } = req.params; // Get the ID from the URL parameters
+//         const { name, post, location } = req.body;
+
+//         // Find the existing support speaker by ID
+//         const supportSpeaker = await SupportSpeaker.findById(id);
+
+//         if (!supportSpeaker) {
+//             return handleResponse(res, 404, "Support Speaker not found");
+//         }
+
+//         let imageUrls = supportSpeaker.images || [];
+
+//         if (req.files && req.files.images) {
+//             const imageFiles = req.files.images || [];
+
+//             if (imageFiles.length > 0) {
+//                 const uploadImagePromises = imageFiles.map(async (file) =>
+//                     cloudinary.uploadImageToCloudinary(file.buffer)
+//                 );
+//                 const uploadedImages = await Promise.all(uploadImagePromises);
+//                 imageUrls = uploadedImages.map((url) => ({ url }));
+//             }
+//         }
+
+//         // Update fields only if provided
+//         supportSpeaker.name = name || supportSpeaker.name;
+//         supportSpeaker.post = post || supportSpeaker.post;
+//         supportSpeaker.location = location || supportSpeaker.location;
+//         supportSpeaker.images = imageUrls.length > 0 ? imageUrls : supportSpeaker.images;
+
+//         await supportSpeaker.save();
+
+//         return handleResponse(res, 200, "Support Speaker Updated Successfully", {
+//             supportSpeaker,
+//         });
+//     } catch (error) {
+//         return handleResponse(res, 500, "Error Updating Support Speaker", {
+//             error: error.message,
+//         });
+//     }
+// };
 
 const deleteSupportSpeakerById = async (req, res) => {
     try {

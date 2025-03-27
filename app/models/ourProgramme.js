@@ -13,7 +13,7 @@ const ourProgrammeSchema = new mongoose.Schema(
       'Special Support ourProgramme',
       'Special Interventions'
     ]},
-    banner: { type: String }, 
+    banner: [{ type: String }], 
 
     details: [
       {
