@@ -1,26 +1,43 @@
+const path = require("path");
+const fs = require("fs");
+const ejs = require("ejs");
 const Subscribers = require("../models/subscribers");
-const sendEmail = require("../utils/emailHandler"); 
+const sendEmail = require("../utils/emailHandler");
 
 const notifySubscribers = async (req, res, next) => {
   try {
-    if (req.method === "POST" && req.contentCreated) {
+    if (req.contentCreated && req.contentTitle && req.contentType) {
       const subscribers = await Subscribers.find();
-      const subject = "New Content Posted on ATAL FOUNDATION";
-    const message = `Check out our new content: <a href="https://atal-foundation.netlify.app ${req.contentTitle}">${req.contentTitle}</a>`;
 
+      const templatePath = path.join(__dirname, "..", "..", "public", "notify.html");
 
-      const emailPromises = subscribers.map(subscriber => {
-        return sendEmail(subscriber.email, subject, message);
+      if (!fs.existsSync(templatePath)) {
+        throw new Error(`Template file not found at ${templatePath}`);
+      }
+
+      const template = fs.readFileSync(templatePath, "utf-8");
+
+      const emailContent = ejs.render(template, {
+        contentType: req.contentType,
+        contentTitle: req.contentTitle,
+        contentUrl: `${process.env.NOTIFICATION_URL}/${req.contentType.toLowerCase()}`,
       });
 
+      const subject = `New ${req.contentType} Posted on ATAL FOUNDATION`;
+
+      const emailPromises = subscribers.map((subscriber) =>
+        sendEmail(subscriber.email, subject, emailContent)
+      );
+
       await Promise.all(emailPromises);
-      console.log("Notifications sent to all subscribers.");
     }
-    next(); 
+
+    next();
   } catch (error) {
-    console.error("Error notifying subscribers:", error);
+    console.error(`❌ Error notifying subscribers: ${error.message}`);
     next(); 
   }
 };
 
 module.exports = notifySubscribers;
+

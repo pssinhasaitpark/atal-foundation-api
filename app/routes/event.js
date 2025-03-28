@@ -2,11 +2,11 @@ const express = require("express");
 const router = express.Router();
 const { upload } = require("../middlewares/cloudinary");
 const { imageConversionMiddlewareMultiple } = require("../middlewares/upload");
-
+const notifySubscribers = require("../middlewares/notifySubscribers");
 const { event } = require("../controllers");
 const { verifyUser, verifyAdmin } = require("../middlewares/jwtAuth");
 
-router.post("/", verifyUser, verifyAdmin, imageConversionMiddlewareMultiple, event.createEvent);
+router.post("/", verifyUser, verifyAdmin, imageConversionMiddlewareMultiple, event.createEvent, notifySubscribers);
 router.get("/", event.getAllEvents);
 router.get("/:id", event.getEventById);
 router.patch("/:eventId", verifyUser, verifyAdmin, imageConversionMiddlewareMultiple, event.updateEvent);

@@ -1,7 +1,7 @@
 const Subscribers = require("../../models/subscribers");
 const { handleResponse } = require("../../utils/helper");
-const sendEmail = require("../../utils/emailHandler")
- 
+const { sendSubscriptionConfirmationEmail } = require("../../middlewares/sendEmailMiddleware");
+
 const subscribeUser = async (req, res) => {
   try {
     const { email } = req.body;
@@ -18,18 +18,19 @@ const subscribeUser = async (req, res) => {
     const newSubscriber = new Subscribers({ email });
     await newSubscriber.save();
 
-    await sendEmail(email, "Subscription Confirmation from ATAL FOUNDATION", `Thank you for Subscribing! \nBest Regards!!! \nATAL FOUNDATION`);
+    await sendSubscriptionConfirmationEmail(email);
 
     return handleResponse(res, 201, "Subscribed successfully!", {
       subscriber: newSubscriber,
     });
   } catch (error) {
-    console.error("Error in subscribeUser:", error); 
+    console.error("Error in subscribeUser:", error);
     return handleResponse(res, 500, "Error subscribing user", {
       error: error.message,
     });
   }
 };
+
 const getAllSubscribers = async (req, res) => {
   try {
     const subscribers = await Subscribers.find().sort({ createdAt: -1 });

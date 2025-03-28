@@ -9,6 +9,7 @@ exports.createContact = async (req, res) => {
       contact: newContact,
     });
   } catch (err) {
+    console.error("Error saving contact inquiry:", err);
     return handleResponse(res, 500, "Internal server error", { error: err });
   }
 };
