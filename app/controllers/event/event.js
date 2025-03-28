@@ -2,68 +2,47 @@ const Event = require("../../models/event");
 const { uploadImageToCloudinary } = require("../../middlewares/cloudinary");
 const { handleResponse } = require("../../utils/helper");
 
-exports.createEvent = async (req, res) => {
+exports.createEvent = async (req, res, next) => {
   try {
     const { title, description } = req.body;
 
-    // let bannerUrl = "";
     let imageGroups = [];
-
-    // if (req.files?.banner && req.files.banner.length > 0) {
-    //     bannerUrl = await uploadImageToCloudinary(req.files.banner[0].buffer);
-    // }
-
-    const bannerUrl = (req.convertedFiles && req.convertedFiles.banner && req.convertedFiles.banner[0]);
-
-
-    let imageUrls = [];
-    if (req.convertedFiles && req.convertedFiles.images) {
-      imageUrls = [...imageUrls, ...req.convertedFiles.images];
-    }
-
+    const bannerUrl = req.convertedFiles?.banner?.[0];
+    let imageUrls = req.convertedFiles?.images || [];
 
     for (let index = 0; index < req.files.images.length; index++) {
-      const file = req.files.images[index];
-
       const imageTitle = req.body[`image_title_${index + 1}`] || `Image Title ${index + 1}`;
       const imageDescription = req.body[`image_description_${index + 1}`] || `Image Description ${index + 1}`;
       imageGroups.push({
         image_title: imageTitle,
         image_description: imageDescription,
-        images: imageUrls[index]
+        images: imageUrls[index],
       });
     }
-
-
-    // if (req.files?.images && req.files.images.length > 0) {
-    //     for (let index = 0; index < req.files.images.length; index++) {
-    //         const file = req.files.images[index];
-
-    //         const imageTitle = req.body[`image_title_${index + 1}`] || `Image Title ${index + 1}`;
-    //         const imageDescription = req.body[`image_description_${index + 1}`] || `Image Description ${index + 1}`;
-
-    //         const imageUrl = await uploadImageToCloudinary(file.buffer);
-
-    //         imageGroups.push({
-    //             image_title: imageTitle,
-    //             image_description: imageDescription,
-    //             images: [imageUrl]  
-    //         });
-    //     }
-    // }
 
     const newEvent = new Event({
       banner: bannerUrl,
       title,
       description,
-      imageGroups
+      imageGroups,
     });
 
     await newEvent.save();
-    return handleResponse(res, 201, "Event created successfully", { newEvent });
+
+    req.contentCreated = true;
+    req.contentTitle = newEvent.title;
+    req.contentType = "events"; 
+    
+    res.status(201).json({
+      success: true,
+      message: "Event created successfully!",
+      data: newEvent,
+    });
+
+    next();
   } catch (error) {
     console.error("Error:", error.message);
-    return handleResponse(res, 500, error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 

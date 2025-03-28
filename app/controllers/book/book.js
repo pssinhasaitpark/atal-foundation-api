@@ -3,6 +3,7 @@ const { handleResponse } = require("../../utils/helper");
 const { uploadImagesToCloudinary } = require("../../middlewares/cloudinary");
 
 const mongoose = require('mongoose');
+
 const createBook = async (req, res, next) => {
     try {
         if (!req.user || (req.user.user_role !== 'admin' && req.user.user_role !== 'super-admin')) {
@@ -14,29 +15,17 @@ const createBook = async (req, res, next) => {
         if (!book_title || !description || !req.files.cover_image || !req.files.images) {
             return handleResponse(res, 400, "Book title, description, cover image, and book images are required.");
         }
-        const coverImageUrl = (req.convertedFiles && req.convertedFiles.cover_image && req.convertedFiles.cover_image[0]);
 
-
-        // const coverImageUpload = await uploadImagesToCloudinary([req.files.cover_image[0]]);
-        // const coverImageUrl = coverImageUpload && coverImageUpload[0] ? coverImageUpload[0] : null;
-
+        const coverImageUrl = req.convertedFiles?.cover_image?.[0];
 
         if (!coverImageUrl) {
             return handleResponse(res, 400, "Cover image upload failed.");
         }
-        // const bookImagesUpload = await uploadImagesToCloudinary(req.files.images);
-
 
         let imageUrls = [];
         if (req.convertedFiles && req.convertedFiles.images) {
             imageUrls = [...imageUrls, ...req.convertedFiles.images];
         }
-
-        // if (!bookImagesUpload || bookImagesUpload.length === 0) {
-        //     return handleResponse(res, 400, "Book images upload failed.");
-        // }
-
-        // const bookImagesData = bookImagesUpload.map((image) => image); // Assuming the image URLs are returned directly
 
         const newBook = new Book({
             book_title,
@@ -47,14 +36,17 @@ const createBook = async (req, res, next) => {
 
         await newBook.save();
 
+        req.contentCreated = true;
+        req.contentTitle = newBook.book_title;
+        req.contentType = "sada-atal";
 
-        return handleResponse(res, 201, "Book created successfully", {
-            book_title,
-            cover_image: coverImageUrl,
-            description,
-            images: imageUrls,
+        res.status(201).json({
+            success: true,
+            message: "Book created successfully",
+            data: newBook,
         });
 
+        next();
     } catch (err) {
         console.error("Error creating book:", err);
         return handleResponse(res, 500, "Internal server error");

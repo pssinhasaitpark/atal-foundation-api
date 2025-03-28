@@ -81,14 +81,20 @@ const { handleResponse } = require("../../utils/helper");
 //   }
 // };
 
-const createOrUpdateGallery = async (req, res) => {
+
+const createOrUpdateGallery = async (req, res, next) => {
   try {
     const { error } = galleryValidation.validate(req.body);
     if (error) {
       return handleResponse(res, 400, "Validation error", { errors: error.details });
     }
 
-    const { gallery_image_title, gallery_image_description, gallery_video_title, gallery_video_description } = req.body;
+    const {
+      gallery_image_title,
+      gallery_image_description,
+      gallery_video_title,
+      gallery_video_description,
+    } = req.body;
     const { id } = req.query;
 
     let existingGallery = null;
@@ -125,10 +131,17 @@ const createOrUpdateGallery = async (req, res) => {
       });
 
       await existingGallery.save();
-      return handleResponse(res, 200, "Gallery Updated Successfully!", { gallery: existingGallery.toObject() });
-    }
 
-    else {
+      req.contentCreated = true;
+      req.contentTitle = gallery_image_title || "Gallery Updated";
+      req.contentType = "gallery";
+
+      handleResponse(res, 200, "Gallery Updated Successfully!", {
+        gallery: existingGallery.toObject(),
+      });
+
+      next(); 
+    } else {
       const newGallery = new Gallery({
         gallery_image: {
           _id: new mongoose.Types.ObjectId(),
@@ -145,11 +158,22 @@ const createOrUpdateGallery = async (req, res) => {
       });
 
       await newGallery.save();
-      return handleResponse(res, 201, "Gallery Created Successfully!", { gallery: newGallery.toObject() });
+
+      req.contentCreated = true;
+      req.contentTitle = gallery_image_title || "New Gallery Created";
+      req.contentType = "gallery";
+
+      handleResponse(res, 201, "Gallery Created Successfully!", {
+        gallery: newGallery.toObject(),
+      });
+
+      next(); 
     }
   } catch (error) {
     console.error("Error Creating or Updating Gallery:", error);
-    return handleResponse(res, 500, "Error Creating or Updating Gallery", { error: error.message });
+    return handleResponse(res, 500, "Error Creating or Updating Gallery", {
+      error: error.message,
+    });
   }
 };
 
@@ -174,6 +198,7 @@ const getGalleryById = async (req, res) => {
     return handleResponse(res, 500, "Error fetching gallery", { error: error.message });
   }
 };
+
 const updateGalleryById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -220,7 +245,6 @@ const updateGalleryById = async (req, res) => {
     return handleResponse(res, 500, "Error updating gallery", { error: error.message });
   }
 };
-
 
 // const updateGalleryById = async (req, res) => {
 //   try {
